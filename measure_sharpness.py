@@ -24,7 +24,7 @@ import scipy.optimize as sciopt
 import warnings
 from sklearn import random_projection as rp
 import re
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 model_names = sorted(name for name in models.__dict__
                      if name.islower() and not name.startswith("__")
