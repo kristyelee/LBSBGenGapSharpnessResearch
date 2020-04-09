@@ -21,6 +21,33 @@ Run Command:
 The plot is saved as C3ish.pdf
 '''
 
+import pdb
+import argparse
+import os
+import time
+import logging
+from random import uniform
+from datetime import datetime
+import torch
+import torch.nn as nn
+import torch.nn.parallel
+import torch.backends.cudnn as cudnn
+import torch.optim
+import torch.utils.data
+import models
+from torch.autograd import Variable
+from data import get_dataset
+from preprocess import get_transform
+from utils import *
+from ast import literal_eval
+from torch.nn.utils import clip_grad_norm
+from math import ceil
+import numpy as np
+import scipy.optimize as sciopt
+import warnings
+from sklearn import random_projection as rp
+import re
+import matplotlib.pyplot as plt
 import numpy as np
 np.random.seed(1337)
 import torch
@@ -98,6 +125,197 @@ mbatch = torch.load('LB.pth')
 mstoch = torch.load('SB.pth')
 print('Loaded stored solutions')
 
+#sharpness functions
+
+def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=None):
+    if 0 and len(0) > 1:
+        model = torch.nn.DataParallel(model, 0)
+
+    data_time = AverageMeter()
+    losses = AverageMeter()
+    top1 = AverageMeter()
+    top5 = AverageMeter()
+
+    end = time.time()
+    grad_vec = None
+    if training:
+      optimizer = torch.optim.SGD(model.parameters(), 1.0)
+      optimizer.zero_grad()  # only zerout at the beginning
+
+
+    for i, (inputs, target) in enumerate(data_loader):
+        # measure data loading time
+        data_time.update(time.time() - end)
+        if 0 is not None:
+            target = target.cuda(async=True)
+        input_var = Variable(inputs.type(torch.cuda.FloatTensor), volatile=not training)
+        target_var = Variable(target)
+
+        # compute output
+        if not training:
+            output = model(input_var)
+            loss = criterion(output, target_var)
+
+            # measure accuracy and record loss
+            prec1, prec5 = accuracy(output.data, target_var.data, topk=(1, 5))
+            losses.update(loss.data[0], input_var.size(0))
+            top1.update(prec1[0], input_var.size(0))
+            top5.update(prec5[0], input_var.size(0))
+
+        else:
+            mini_inputs = input_var.chunk(256 // 256)
+            mini_targets = target_var.chunk(256 // 256)
+
+            for k, mini_input_var in enumerate(mini_inputs):
+
+                mini_target_var = mini_targets[k]
+                output = model(mini_input_var)
+                loss = criterion(output, mini_target_var)
+
+                prec1, prec5 = accuracy(output.data, mini_target_var.data, topk=(1, 5))
+                losses.update(loss.data[0], mini_input_var.size(0))
+                top1.update(prec1[0], mini_input_var.size(0))
+                top5.update(prec5[0], mini_input_var.size(0))
+
+                # compute gradient and do SGD step
+                loss.backward()
+
+            #optimizer.step() # no step in this case
+
+    # reshape and averaging gradients
+    if training:
+      for p in model.parameters():
+        p.grad.data.div_(len(data_loader))
+        if grad_vec is None:
+          grad_vec = p.grad.data.view(-1)
+        else:
+          grad_vec = torch.cat((grad_vec, p.grad.data.view(-1)))
+
+    #logging.info('{phase} - \t'
+    #             'Loss {loss.avg:.4f}\t'
+    #             'Prec@1 {top1.avg:.3f}\t'
+    #             'Prec@5 {top5.avg:.3f}'.format(
+    #              phase='TRAINING' if training else 'EVALUATING',
+    #              loss=losses, top1=top1, top5=top5))
+
+    return {'loss': losses.avg,
+            'prec1': top1.avg,
+            'prec5': top5.avg}, grad_vec
+
+
+def train(data_loader, model, criterion, epoch, optimizer):
+    # switch to train mode
+    raise NotImplementedError('train functionality is changed. Do not use it!')
+
+
+def validate(data_loader, model, criterion, epoch):
+    # switch to evaluate mode
+    model.eval()
+    res, _ = forward(data_loader, model, criterion, epoch,
+                   training=False, optimizer=None)
+    return res
+
+
+def get_minus_cross_entropy(x, data_loader, model, criterion, training=False):
+  if type(x).__module__ == np.__name__:
+    x = torch.from_numpy(x).float()
+    x = x.cuda()
+  # switch to evaluate mode
+  model.eval()
+
+  # fill vector x of parameters to model
+  x_start = 0
+  for p in model.parameters():
+    psize = p.data.size()
+    peltnum = 1
+    for s in psize:
+      peltnum *= s
+    x_part = x[x_start:x_start+peltnum]
+    p.data = x_part.view(psize)
+    x_start += peltnum
+
+  result, grads = forward(data_loader, model, criterion, 0,
+                 training=training, optimizer=None)
+  #print ('get_minus_cross_entropy {}!'.format(-result['loss']))
+  return (-result['loss'], None if grads is None else grads.cpu().numpy().astype(np.float64))
+
+def get_sharpness(data_loader, model, criterion, manifolds=0):
+
+  # extract current x0
+  x0 = None
+  for p in model.parameters():
+    if x0 is None:
+      x0 = p.data.view(-1)
+    else:
+      x0 = torch.cat((x0, p.data.view(-1)))
+  x0 = x0.cpu().numpy()
+
+  # get current f_x
+  f_x0, _ = get_minus_cross_entropy(x0, data_loader, model, criterion)
+  f_x0 = -f_x0
+  logging.info('min loss f_x0 = {loss:.4f}'.format(loss=f_x0))
+
+  # get the bounds
+  epsilon = 0.0005
+  # find the minimum
+  if 0==manifolds:
+    x_min = np.reshape(x0 - epsilon * (np.abs(x0) + 1), (x0.shape[0], 1))
+    x_max = np.reshape(x0 + epsilon * (np.abs(x0) + 1), (x0.shape[0], 1))
+    bounds = np.concatenate([x_min, x_max], 1)
+    func = lambda x: get_minus_cross_entropy(x, data_loader, model, criterion, training=True)
+    init_guess = x0
+  else:
+    warnings.warn("Small manifolds may not be able to explore the space.")
+    assert(manifolds<=x0.shape[0])
+    #transformer = rp.GaussianRandomProjection(n_components=manifolds)
+    #transformer.fit(np.random.rand(manifolds, x0.shape[0]))
+    #A_plus = transformer.components_
+    #A = np.linalg.pinv(A_plus)
+    A_plus = np.random.rand(manifolds, x0.shape[0])*2.-1.
+    # normalize each column to unit length
+    A_plus_norm = np.linalg.norm(A_plus, axis=1)
+    A_plus = A_plus / np.reshape(A_plus_norm, (manifolds,1))
+    A = np.linalg.pinv(A_plus)
+    abs_bound = epsilon * (np.abs(np.dot(A_plus, x0))+1)
+    abs_bound = np.reshape(abs_bound, (abs_bound.shape[0], 1))
+    bounds = np.concatenate([-abs_bound, abs_bound], 1)
+    def func(y):
+      floss, fg = get_minus_cross_entropy(x0 + np.dot(A, y), data_loader, model, criterion, training=True)
+      return floss, np.dot(np.transpose(A), fg)
+    #func = lambda y: get_minus_cross_entropy(x0+np.dot(A, y), data_loader, model, criterion, training=True)
+    init_guess = np.zeros(manifolds)
+
+  #rand_selections = (np.random.rand(bounds.shape[0])+1e-6)*0.99
+  #init_guess = np.multiply(1.-rand_selections, bounds[:,0])+np.multiply(rand_selections, bounds[:,1])
+
+  minimum_x, f_x, d = sciopt.fmin_l_bfgs_b(
+    func,
+    init_guess,
+    maxiter=10,
+    bounds=bounds,
+    #factr=10.,
+    #pgtol=1.e-12,
+    disp=1)
+  f_x = -f_x
+  logging.info('max loss f_x = {loss:.4f}'.format(loss=f_x))
+  sharpness = (f_x - f_x0)/(1+f_x0)*100
+
+  # recover the model
+  x0 = torch.from_numpy(x0).float()
+  x0 = x0.cuda()
+  x_start = 0
+  for p in model.parameters():
+      psize = p.data.size()
+      peltnum = 1
+      for s in psize:
+          peltnum *= s
+      x_part = x0[x_start:x_start + peltnum]
+      p.data = x_part.view(psize)
+      x_start += peltnum
+
+  return sharpness
+
+
 
 grid_size = 25 #How many points of interpolation between [-1, 2]
 data_for_plotting = np.zeros((grid_size, 4))
@@ -150,12 +368,12 @@ logging.info('\nValidation Loss {val_loss:.4f} \t'
                      val_prec1=val_prec1,
                      val_prec5=val_prec5))
 sharpnesses= []
-for time in range(args.times):
-    sharpness = get_sharpness(val_loader, model, criterion, manifolds=args.manifolds)
+for time in range(5):
+    sharpness = get_sharpness(val_loader, model, criterion, manifolds=0)
     sharpnesses.append(sharpness)
     logging.info('sharpness {} = {}'.format(time,sharpness))
 logging.info('sharpnesses = {}'.format(str(sharpnesses)))
-_std = np.std(sharpnesses)*np.sqrt(args.times)/np.sqrt(args.times-1)
+_std = np.std(sharpnesses)*np.sqrt(5)/np.sqrt(5-1)
 _mean = np.mean(sharpnesses)
 logging.info(u'mean sharpness = {sharpness:.4f}\u00b1{err:.4f}'.format(sharpness=_mean,err=_std))
 
