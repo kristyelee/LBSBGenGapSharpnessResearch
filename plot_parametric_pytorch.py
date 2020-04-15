@@ -61,7 +61,9 @@ import vgg
 
 (X_train, y_train), (X_test, y_test) = cifar10.load_data()
 X_train = X_train.astype('float32')
+X_train = np.transpose(X_train, axes=(0, 3, 1, 2))
 X_test = X_test.astype('float32')
+X_test = np.transpose(X_train, axes=(0, 3, 1, 2))
 X_train /= 255
 X_test /= 255
 
@@ -115,7 +117,7 @@ if not hotstart:
                 ops = opfun(X_train[smpl])
                 tgts = Variable(torch.from_numpy(y_train[smpl]).long().squeeze())
                 loss_fn = F.nll_loss(ops, tgts)
-                average_loss_over_epoch += loss_fn.data.numpy()[0] / fractions_of_dataset
+                average_loss_over_epoch += loss_fn.data.numpy() / fractions_of_dataset
                 loss_fn.backward()
                 optimizer.step()
 
@@ -318,7 +320,7 @@ def get_sharpness(data_loader, model, criterion, manifolds=0):
 
 
 grid_size = 25 #How many points of interpolation between [-1, 2]
-data_for_plotting = np.zeros((grid_size, 4))
+data_for_plotting = np.zeros((grid_size, 4)) #four lines  --> change to 3 in Figure 4
 alpha_range = np.linspace(-1, 2, grid_size)
 i = 0
 
@@ -337,8 +339,8 @@ for alpha in alpha_range:
         for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
             ops = opfun(dataX[smpl])
             tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
-            data_for_plotting[i, j] += F.nll_loss(ops, tgts).data.numpy()[0] / 10.
-            data_for_plotting[i, j+2] += accfun(ops, datay[smpl]) / 10.
+            # data_for_plotting[i, j] += F.nll_loss(ops, tgts).data.numpy()[0] / 10.
+            data_for_plotting[i, j] += accfun(ops, datay[smpl]) / 10.
         j += 1
     print(data_for_plotting[i])
     i += 1
@@ -375,7 +377,6 @@ for time in range(5):
 logging.info('sharpnesses = {}'.format(str(sharpnesses)))
 _std = np.std(sharpnesses)*np.sqrt(5)/np.sqrt(5-1)
 _mean = np.mean(sharpnesses)
-logging.info(u'mean sharpness = {sharpness:.4f}\u00b1{err:.4f}'.format(sharpness=_mean,err=_std))
 
 
 
@@ -391,11 +392,11 @@ ax1.semilogy(alpha_range, data_for_plotting[:, 1], 'b--')
 ax2.plot(alpha_range, data_for_plotting[:, 2], 'r-')
 ax2.plot(alpha_range, data_for_plotting[:, 3], 'r--')
 
-ax1.set_xlabel('alpha')
-ax1.set_ylabel('Cross Entropy', color='b')
-ax2.set_ylabel('Accuracy', color='r')
-ax1.legend(('Train', 'Test'), loc=0)
+ax1.set_xlabel('Batch Size')
+ax1.set_ylabel('Testing Accuracy', color='b')
+ax2.set_ylabel('Sharpness', color='r')
+ax1.legend(('1e-3', '5e-4'), loc=0)
 
 ax1.grid(b=True, which='both')
-plt.savefig('C3ish.pdf')
+plt.savefig('AccuracySharpnessPlot.pdf')
 print('Saved figure; Task complete')
