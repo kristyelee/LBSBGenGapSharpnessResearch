@@ -241,7 +241,7 @@ def get_minus_cross_entropy(x, data_loader, model, criterion, training=False):
   #print ('get_minus_cross_entropy {}!'.format(-result['loss']))
   return (-result['loss'], None if grads is None else grads.cpu().numpy().astype(np.float64))
 
-def get_sharpness(data_loader, model, criterion, manifolds=0):
+def get_sharpness(data_loader, model, criterion, manifolds=0, epsiolon):
 
   # extract current x0
   x0 = None
@@ -257,8 +257,6 @@ def get_sharpness(data_loader, model, criterion, manifolds=0):
   f_x0 = -f_x0
   logging.info('min loss f_x0 = {loss:.4f}'.format(loss=f_x0))
 
-  # get the bounds
-  epsilon = 0.0005
   # find the minimum
   if 0==manifolds:
     x_min = np.reshape(x0 - epsilon * (np.abs(x0) + 1), (x0.shape[0], 1))
@@ -319,14 +317,14 @@ def get_sharpness(data_loader, model, criterion, manifolds=0):
 
 
 
-grid_size = 25 #How many points of interpolation between [-1, 2]
-data_for_plotting = np.zeros((grid_size, 4)) #four lines  --> change to 3 in Figure 4
-alpha_range = np.linspace(-1, 2, grid_size)
+grid_size = 200 #How many points of interpolation between [0, 5000]
+data_for_plotting = np.zeros((grid_size, 3)) #four lines  --> change to 3 in Figure 4
+batch_range = np.linspace(0, 5000, grid_size)
 i = 0
 
-# Fill in the train and test, loss and accuracy values
+# Fill in test accuracy values
 # for `grid_size' points in the interpolation
-for alpha in alpha_range:
+for batch in batch_range:
     mydict = {}
     for key, value in mbatch.iteritems():
         mydict[key] = value * alpha + (1 - alpha) * mstoch[key]
@@ -340,7 +338,8 @@ for alpha in alpha_range:
             ops = opfun(dataX[smpl])
             tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
             # data_for_plotting[i, j] += F.nll_loss(ops, tgts).data.numpy()[0] / 10.
-            data_for_plotting[i, j] += accfun(ops, datay[smpl]) / 10.
+            if j == 1:
+                data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
         j += 1
     print(data_for_plotting[i])
     i += 1
@@ -351,32 +350,43 @@ transform = getattr(model, 'input_transform', default_transform)
 
 # define loss function (criterion) and optimizer
 criterion = getattr(model, 'criterion', nn.CrossEntropyLoss)()
-criterion.type(args.type)
-model.type(args.type)
+criterion.type(torch.cuda.FloatTensor)
+model.type(torch.cuda.FloatTensor)
 
-val_data = get_dataset(args.dataset, 'val', transform['eval'])
-val_loader = torch.utils.data.DataLoader(
-    val_data,
-    batch_size=256, shuffle=False,
-    num_workers=8, pin_memory=True)
+# logging.info('\nValidation Loss {val_loss:.4f} \t'
+#              'Validation Prec@1 {val_prec1:.3f} \t'
+#              'Validation Prec@5 {val_prec5:.3f} \n'
+#              .format(val_loss=val_loss,
+#                      val_prec1=val_prec1,
+#                      val_prec5=val_prec5))
 
-val_result = validate(val_loader, model, criterion, 0)
-val_loss, val_prec1, val_prec5 = [val_result[r]
-                                  for r in ['loss', 'prec1', 'prec5']]
-logging.info('\nValidation Loss {val_loss:.4f} \t'
-             'Validation Prec@1 {val_prec1:.3f} \t'
-             'Validation Prec@5 {val_prec5:.3f} \n'
-             .format(val_loss=val_loss,
-                     val_prec1=val_prec1,
-                     val_prec5=val_prec5))
-sharpnesses= []
-for time in range(5):
-    sharpness = get_sharpness(val_loader, model, criterion, manifolds=0)
-    sharpnesses.append(sharpness)
-    logging.info('sharpness {} = {}'.format(time,sharpness))
-logging.info('sharpnesses = {}'.format(str(sharpnesses)))
-_std = np.std(sharpnesses)*np.sqrt(5)/np.sqrt(5-1)
-_mean = np.mean(sharpnesses)
+sharpnesses1eNeg3 = []
+sharpnesses5eNeg4 = []
+i = 0
+for batch in batch_range:
+    val_data = get_dataset(cifar10, 'val', transform['eval'])
+    val_loader = torch.utils.data.DataLoader(
+        val_data,
+        batch_size=batch, shuffle=False,
+        num_workers=8, pin_memory=True)
+
+    val_result = validate(val_loader, model, criterion, 0)
+    val_loss, val_prec1, val_prec5 = [val_result[r]
+                                      for r in ['loss', 'prec1', 'prec5']]
+
+    sharpness = get_sharpness(val_loader, model, criterion, manifolds=0, 0.001)
+    sharpnesses1eNeg3.append(sharpness)
+    data_for_plotting[i, 1] += sharpness
+    sharpness = get_sharpness(val_loader, model, criterion, manifolds=0, 0.0005)
+    sharpnesses5eNeg4.append(sharpness)
+    data_for_plotting[i, 2] += sharpness
+    i += 1
+
+
+# logging.info('sharpness {} = {}'.format(time,sharpness))
+# logging.info('sharpnesses = {}'.format(str(sharpnesses)))
+# _std = np.std(sharpnesses)*np.sqrt(5)/np.sqrt(5-1)
+# _mean = np.mean(sharpnesses)
 
 
 
@@ -386,11 +396,10 @@ _mean = np.mean(sharpnesses)
 import matplotlib.pyplot as plt
 fig, ax1 = plt.subplots()
 ax2 = ax1.twinx()
-ax1.semilogy(alpha_range, data_for_plotting[:, 0], 'b-')
-ax1.semilogy(alpha_range, data_for_plotting[:, 1], 'b--')
+ax1.semilogy(batch_range, data_for_plotting[:, 0], 'b-')
 
-ax2.plot(alpha_range, data_for_plotting[:, 2], 'r-')
-ax2.plot(alpha_range, data_for_plotting[:, 3], 'r--')
+ax2.plot(batch_range, data_for_plotting[:, 1], 'r-')
+ax2.plot(batch_range, data_for_plotting[:, 2], 'r--')
 
 ax1.set_xlabel('Batch Size')
 ax1.set_ylabel('Testing Accuracy', color='b')
