@@ -1,4 +1,4 @@
-'''
+"""
 Reproduces the parametric plot experiment from the paper
 for a network like C3.
 
@@ -19,7 +19,7 @@ Run Command:
         python plot_parametric_pytorch.py
 
 The plot is saved as C3ish.pdf
-'''
+"""
 
 import pdb
 import argparse
@@ -34,7 +34,6 @@ import torch.nn.parallel
 import torch.backends.cudnn as cudnn
 import torch.optim
 import torch.utils.data
-import models
 from torch.autograd import Variable
 from data import get_dataset
 from preprocess import get_transform
@@ -88,7 +87,8 @@ x0 = deepcopy(model.state_dict())
 
 # Number of epochs to train for
 # Choose a large value since LB training needs higher values
-nb_epochs = 150
+# Changed from 150 to 30
+nb_epochs = 30
 
 
 # If SB.pth and LB.pth are available
@@ -97,7 +97,7 @@ nb_epochs = 150
 hotstart = False
 
 if not hotstart:
-    for fractions_of_dataset in [10, 200]: #Run with 1/10th the data set and 1/200th the dataset
+    for fractions_of_dataset in [10, 16, 20, 25, 40, 50, 80, 100, 200, 400, 625, 1000, 2000]: #Run with 1/10th the data set, until 1/2000th the dataset
         optimizer = torch.optim.Adam(model.parameters())
         model.load_state_dict(x0)
         average_loss_over_epoch = '-'
@@ -106,9 +106,9 @@ if not hotstart:
         for e in range(nb_epochs):
             model.eval()
             print('Epoch:', e, ' of ', nb_epochs, 'Average loss:', average_loss_over_epoch)
-            average_loss_over_epoch = 0.
+            average_loss_over_epoch = 0
             # Checkpoint the model every epoch
-            torch.save(model.state_dict(), ('SB' if fractions_of_dataset==200 else 'LB')+'.pth')
+            torch.save(model.state_dict(), "BatchSize" + str(X_train.shape[0]//fractions_of_dataset) + ".pth")
 
             # Training loop!
             for smpl in np.split(np.random.permutation(range(X_train.shape[0])), fractions_of_dataset):
@@ -123,11 +123,11 @@ if not hotstart:
 
 # Load stored values
 # If hotstarted, loop is ignored and SB/LB files must be provided
-mbatch = torch.load('LB.pth')
-mstoch = torch.load('SB.pth')
+# mbatch = torch.load('LB.pth')
+# mstoch = torch.load('SB.pth')
 print('Loaded stored solutions')
 
-#sharpness functions
+#Functions relevant for calculating Sharpness
 
 def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=None):
     if 0 and len(0) > 1:
@@ -241,7 +241,7 @@ def get_minus_cross_entropy(x, data_loader, model, criterion, training=False):
   #print ('get_minus_cross_entropy {}!'.format(-result['loss']))
   return (-result['loss'], None if grads is None else grads.cpu().numpy().astype(np.float64))
 
-def get_sharpness(data_loader, model, criterion, manifolds=0, epsiolon):
+def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
 
   # extract current x0
   x0 = None
@@ -316,18 +316,21 @@ def get_sharpness(data_loader, model, criterion, manifolds=0, epsiolon):
   return sharpness
 
 
-
-grid_size = 200 #How many points of interpolation between [0, 5000]
+fractions_of_dataset = [10, 16, 20, 25, 40, 50, 80, 100, 200, 400, 625, 1000, 2000]
+fractions_of_dataset.reverse()
+grid_size = len(fractions_of_dataset) #How many points of interpolation between [0, 5000]
 data_for_plotting = np.zeros((grid_size, 3)) #four lines  --> change to 3 in Figure 4
-batch_range = np.linspace(0, 5000, grid_size)
+# batch_range = np.linspace(0, 5000, grid_size)
+
 i = 0
 
 # Fill in test accuracy values
 # for `grid_size' points in the interpolation
-for batch in batch_range:
+for fraction in fractions_of_dataset:
     mydict = {}
-    for key, value in mbatch.iteritems():
-        mydict[key] = value * alpha + (1 - alpha) * mstoch[key]
+    batchmodel = torch.load("BatchSize" + str(X_train.shape[0]//fraction) + ".pth")
+    for key, value in batchmodel.items():
+        mydict[key] = value
     model.load_state_dict(mydict)
     testloss = trainloss = testacc = trainacc = 0.
     j = 0
@@ -337,14 +340,14 @@ for batch in batch_range:
         for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
             ops = opfun(dataX[smpl])
             tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
-            # data_for_plotting[i, j] += F.nll_loss(ops, tgts).data.numpy()[0] / 10.
+            # data_for_plotting[i, j] +=
+            var = F.nll_loss(ops, tgts).data.numpy() / 10
             if j == 1:
                 data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
         j += 1
     print(data_for_plotting[i])
     i += 1
 np.save('intermediate-values', data_for_plotting)
-
 
 transform = getattr(model, 'input_transform', default_transform)
 
@@ -363,21 +366,27 @@ model.type(torch.cuda.FloatTensor)
 sharpnesses1eNeg3 = []
 sharpnesses5eNeg4 = []
 i = 0
-for batch in batch_range:
+#for batch in bactch_range
+for fraction in fractions_of_dataset:
+    mydict = {}
+    batchmodel = torch.load("BatchSize" + str(X_train.shape[0]//fraction) + ".pth")
+    for key, value in batchmodel.items():
+        mydict[key] = value
+    model.load_state_dict(mydict)
     val_data = get_dataset(cifar10, 'val', transform['eval'])
     val_loader = torch.utils.data.DataLoader(
         val_data,
-        batch_size=batch, shuffle=False,
-        num_workers=8, pin_memory=True)
+        batch_size=X_train.shape[0]//fraction, shuffle=False,
+        num_workers=8, pin_memory=True) #batch
 
     val_result = validate(val_loader, model, criterion, 0)
     val_loss, val_prec1, val_prec5 = [val_result[r]
                                       for r in ['loss', 'prec1', 'prec5']]
 
-    sharpness = get_sharpness(val_loader, model, criterion, manifolds=0, 0.001)
+    sharpness = get_sharpness(val_loader, model, criterion, 0.001, manifolds=0)
     sharpnesses1eNeg3.append(sharpness)
     data_for_plotting[i, 1] += sharpness
-    sharpness = get_sharpness(val_loader, model, criterion, manifolds=0, 0.0005)
+    sharpness = get_sharpness(val_loader, model, criterion, 0.0005, manifolds=0)
     sharpnesses5eNeg4.append(sharpness)
     data_for_plotting[i, 2] += sharpness
     i += 1
