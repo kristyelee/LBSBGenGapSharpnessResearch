@@ -71,7 +71,7 @@ X_test /= 255
 # You can take this line out and add any other network and the code
 # should run just fine.
 model = vgg.vgg11_bn()
-
+model.to(cuda)
 
 # Forward pass
 opfun = lambda X: model.forward(Variable(torch.from_numpy(X)))
@@ -374,11 +374,13 @@ for fraction in fractions_of_dataset:
         mydict[key] = value
     model.load_state_dict(mydict)
     val_data = get_dataset(cifar10, 'val', transform['eval'])
+
     val_loader = torch.utils.data.DataLoader(
         val_data,
         batch_size=X_train.shape[0]//fraction, shuffle=False,
         num_workers=8, pin_memory=True) #batch
-
+    val_loader.to(cuda) # are we using model.to(cuda) here?
+    model.to(cuda)
     val_result = validate(val_loader, model, criterion, 0)
     val_loss, val_prec1, val_prec5 = [val_result[r]
                                       for r in ['loss', 'prec1', 'prec5']]
