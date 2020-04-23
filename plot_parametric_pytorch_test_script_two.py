@@ -62,7 +62,7 @@ import vgg
 X_train = X_train.astype('float32')
 X_train = np.transpose(X_train, axes=(0, 3, 1, 2))
 X_test = X_test.astype('float32')
-X_test = np.transpose(X_train, axes=(0, 3, 1, 2))
+X_test = np.transpose(X_test, axes=(0, 3, 1, 2))
 X_train /= 255
 X_test /= 255
 
@@ -338,6 +338,7 @@ for fraction in fractions_of_dataset:
         dataX = datatype[0]
         datay = datatype[1]
         for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
+
             ops = opfun(dataX[smpl])
             tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
             # data_for_plotting[i, j] +=
