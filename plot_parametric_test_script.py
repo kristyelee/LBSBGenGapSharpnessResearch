@@ -45,6 +45,7 @@ X_test /= 255
 
 model = vgg.vgg11_bn()
 
+model.to(cuda)
 
 # Forward pass
 opfun = lambda X: model.forward(Variable(torch.from_numpy(X)))
@@ -61,7 +62,7 @@ x0 = deepcopy(model.state_dict())
 # Number of epochs to train for
 # Choose a large value since LB training needs higher values
 # Changed from 150 to 30
-nb_epochs = 30
+nb_epochs = 2
 
 
 # If SB.pth and LB.pth are available
@@ -98,4 +99,4 @@ if not hotstart:
 # If hotstarted, loop is ignored and SB/LB files must be provided
 mbatch = torch.load('LB.pth')
 
-print(mbatch.iteritems())
+print(mbatch.items())

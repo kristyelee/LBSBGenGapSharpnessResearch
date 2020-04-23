@@ -88,7 +88,7 @@ x0 = deepcopy(model.state_dict())
 # Number of epochs to train for
 # Choose a large value since LB training needs higher values
 # Changed from 150 to 30
-nb_epochs = 30
+nb_epochs = 2
 
 
 # If SB.pth and LB.pth are available
@@ -97,7 +97,7 @@ nb_epochs = 30
 hotstart = False
 
 if not hotstart:
-    for fractions_of_dataset in [10, 16, 20, 25, 40, 50, 80, 100, 200, 400, 625, 1000, 2000]: #Run with 1/10th the data set, until 1/2000th the dataset
+    for fractions_of_dataset in [100, 200]: #Run with 1/10th the data set, until 1/2000th the dataset
         optimizer = torch.optim.Adam(model.parameters())
         model.load_state_dict(x0)
         average_loss_over_epoch = '-'
@@ -316,7 +316,7 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
   return sharpness
 
 
-fractions_of_dataset = [10, 16, 20, 25, 40, 50, 80, 100, 200, 400, 625, 1000, 2000]
+fractions_of_dataset = [100, 200]
 fractions_of_dataset.reverse()
 grid_size = len(fractions_of_dataset) #How many points of interpolation between [0, 5000]
 data_for_plotting = np.zeros((grid_size, 3)) #four lines  --> change to 3 in Figure 4
