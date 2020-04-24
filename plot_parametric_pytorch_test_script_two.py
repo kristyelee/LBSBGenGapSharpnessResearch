@@ -95,31 +95,31 @@ nb_epochs = 2
 # set hotstart = True and run only the
 # parametric plot (i.e., don't train the network)
 hotstart = False
-
-if not hotstart:
-    for fractions_of_dataset in [100, 200]: #Run with 1/10th the data set, until 1/2000th the dataset
-        optimizer = torch.optim.Adam(model.parameters())
-        model.load_state_dict(x0)
-        average_loss_over_epoch = '-'
-        print('Optimizing the network with batch size %d' % (X_train.shape[0]/fractions_of_dataset))
-        np.random.seed(1337) #So that both networks see same sequence of batches
-        for e in range(nb_epochs):
-            model.eval()
-            print('Epoch:', e, ' of ', nb_epochs, 'Average loss:', average_loss_over_epoch)
-            average_loss_over_epoch = 0
-            # Checkpoint the model every epoch
-            torch.save(model.state_dict(), "BatchSize" + str(X_train.shape[0]//fractions_of_dataset) + ".pth")
-
-            # Training loop!
-            for smpl in np.split(np.random.permutation(range(X_train.shape[0])), fractions_of_dataset):
-                model.train()
-                optimizer.zero_grad()
-                ops = opfun(X_train[smpl])
-                tgts = Variable(torch.from_numpy(y_train[smpl]).long().squeeze())
-                loss_fn = F.nll_loss(ops, tgts)
-                average_loss_over_epoch += loss_fn.data.numpy() / fractions_of_dataset
-                loss_fn.backward()
-                optimizer.step()
+#
+# if not hotstart:
+#     for fractions_of_dataset in [100, 200]: #Run with 1/10th the data set, until 1/2000th the dataset
+#         optimizer = torch.optim.Adam(model.parameters())
+#         model.load_state_dict(x0)
+#         average_loss_over_epoch = '-'
+#         print('Optimizing the network with batch size %d' % (X_train.shape[0]/fractions_of_dataset))
+#         np.random.seed(1337) #So that both networks see same sequence of batches
+#         for e in range(nb_epochs):
+#             model.eval()
+#             print('Epoch:', e, ' of ', nb_epochs, 'Average loss:', average_loss_over_epoch)
+#             average_loss_over_epoch = 0
+#             # Checkpoint the model every epoch
+#             torch.save(model.state_dict(), "BatchSize" + str(X_train.shape[0]//fractions_of_dataset) + ".pth")
+#
+#             # Training loop!
+#             for smpl in np.split(np.random.permutation(range(X_train.shape[0])), fractions_of_dataset):
+#                 model.train()
+#                 optimizer.zero_grad()
+#                 ops = opfun(X_train[smpl])
+#                 tgts = Variable(torch.from_numpy(y_train[smpl]).long().squeeze())
+#                 loss_fn = F.nll_loss(ops, tgts)
+#                 average_loss_over_epoch += loss_fn.data.numpy() / fractions_of_dataset
+#                 loss_fn.backward()
+#                 optimizer.step()
 
 # Load stored values
 # If hotstarted, loop is ignored and SB/LB files must be provided
@@ -350,6 +350,13 @@ for fraction in fractions_of_dataset:
     i += 1
 np.save('intermediate-values', data_for_plotting)
 
+# Data loading code
+default_transform = {
+    'train': get_transform(cifar10,
+                           input_size=None, augment=True),
+    'eval': get_transform(cifar10,
+                          input_size=None, augment=False)
+}
 transform = getattr(model, 'input_transform', default_transform)
 
 # define loss function (criterion) and optimizer

@@ -62,7 +62,7 @@ import vgg
 X_train = X_train.astype('float32')
 X_train = np.transpose(X_train, axes=(0, 3, 1, 2))
 X_test = X_test.astype('float32')
-X_test = np.transpose(X_train, axes=(0, 3, 1, 2))
+X_test = np.transpose(X_test, axes=(0, 3, 1, 2))
 X_train /= 255
 X_test /= 255
 
@@ -348,7 +348,13 @@ for fraction in fractions_of_dataset:
     print(data_for_plotting[i])
     i += 1
 np.save('intermediate-values', data_for_plotting)
-
+# Data loading code
+default_transform = {
+    'train': get_transform(cifar10,
+                           input_size=None, augment=True),
+    'eval': get_transform(cifar10,
+                          input_size=None, augment=False)
+}
 transform = getattr(model, 'input_transform', default_transform)
 
 # define loss function (criterion) and optimizer
