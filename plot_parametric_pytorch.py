@@ -332,7 +332,7 @@ for fraction in fractions_of_dataset:
     for key, value in batchmodel.items():
         mydict[key] = value
     model.load_state_dict(mydict)
-    testloss = trainloss = testacc = trainacc = 0.
+    
     j = 0
     for datatype in [(X_train, y_train), (X_test, y_test)]:
         dataX = datatype[0]
@@ -350,9 +350,9 @@ for fraction in fractions_of_dataset:
 np.save('intermediate-values', data_for_plotting)
 # Data loading code
 default_transform = {
-    'train': get_transform(cifar10,
+    'train': get_transform("cifar10",
                            input_size=None, augment=True),
-    'eval': get_transform(cifar10,
+    'eval': get_transform("cifar10",
                           input_size=None, augment=False)
 }
 transform = getattr(model, 'input_transform', default_transform)

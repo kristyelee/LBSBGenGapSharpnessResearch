@@ -121,10 +121,7 @@ hotstart = False
 #                 loss_fn.backward()
 #                 optimizer.step()
 
-# Load stored values
-# If hotstarted, loop is ignored and SB/LB files must be provided
-# mbatch = torch.load('LB.pth')
-# mstoch = torch.load('SB.pth')
+
 print('Loaded stored solutions')
 
 #Functions relevant for calculating Sharpness
@@ -132,7 +129,7 @@ print('Loaded stored solutions')
 def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=None):
     if 0 and len(0) > 1:
         model = torch.nn.DataParallel(model, 0)
-
+    # print(data_loader)
     data_time = AverageMeter()
     losses = AverageMeter()
     top1 = AverageMeter()
@@ -149,7 +146,7 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
         # measure data loading time
         data_time.update(time.time() - end)
         if 0 is not None:
-            target = target.cuda(True)
+            continue# target = target.cuda(device=None) #commented out
         input_var = Variable(inputs.type(torch.cuda.FloatTensor), volatile=not training)
         target_var = Variable(target)
 
@@ -186,12 +183,13 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
 
     # reshape and averaging gradients
     if training:
-      for p in model.parameters():
-        p.grad.data.div_(len(data_loader))
-        if grad_vec is None:
-          grad_vec = p.grad.data.view(-1)
-        else:
-          grad_vec = torch.cat((grad_vec, p.grad.data.view(-1)))
+        for p in model.parameters():
+            if p.grad is not None: # new line
+                p.grad.data.div_(len(data_loader))
+                if grad_vec is None:
+                    grad_vec = p.grad.data.view(-1)
+                else:
+                    grad_vec = torch.cat((grad_vec, p.grad.data.view(-1)))
 
     #logging.info('{phase} - \t'
     #             'Loss {loss.avg:.4f}\t'
@@ -221,7 +219,7 @@ def validate(data_loader, model, criterion, epoch):
 def get_minus_cross_entropy(x, data_loader, model, criterion, training=False):
   if type(x).__module__ == np.__name__:
     x = torch.from_numpy(x).float()
-    x = x.cuda()
+    # x = x.cuda()
   # switch to evaluate mode
   model.eval()
 
@@ -288,14 +286,13 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
   #rand_selections = (np.random.rand(bounds.shape[0])+1e-6)*0.99
   #init_guess = np.multiply(1.-rand_selections, bounds[:,0])+np.multiply(rand_selections, bounds[:,1])
 
-  minimum_x, f_x, d = sciopt.fmin_l_bfgs_b(
-    func,
-    init_guess,
-    maxiter=10,
-    bounds=bounds,
+  print(init_guess.shape)
+  for i in range(len(bounds)):
+      bounds[i] = (bounds[i][0],bounds[i][1])
+  minimum_x, f_x, d = sciopt.fmin_l_bfgs_b(func, init_guess, maxiter=10, bounds=list(bounds), disp=1)
     #factr=10.,
     #pgtol=1.e-12,
-    disp=1)
+
   f_x = -f_x
   logging.info('max loss f_x = {loss:.4f}'.format(loss=f_x))
   sharpness = (f_x - f_x0)/(1+f_x0)*100
@@ -324,37 +321,36 @@ data_for_plotting = np.zeros((grid_size, 3)) #four lines  --> change to 3 in Fig
 
 i = 0
 
-# Fill in test accuracy values
-# for `grid_size' points in the interpolation
-for fraction in fractions_of_dataset:
-    mydict = {}
-    batchmodel = torch.load("BatchSize" + str(X_train.shape[0]//fraction) + ".pth")
-    for key, value in batchmodel.items():
-        mydict[key] = value
-    model.load_state_dict(mydict)
-    testloss = trainloss = testacc = trainacc = 0.
-    j = 0
-    for datatype in [(X_train, y_train), (X_test, y_test)]:
-        dataX = datatype[0]
-        datay = datatype[1]
-        for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
-
-            ops = opfun(dataX[smpl])
-            tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
-            # data_for_plotting[i, j] +=
-            var = F.nll_loss(ops, tgts).data.numpy() / 10
-            if j == 1:
-                data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
-        j += 1
-    print(data_for_plotting[i])
-    i += 1
-np.save('intermediate-values', data_for_plotting)
+#Fill in test accuracy values
+#for `grid_size' points in the interpolation
+# for fraction in fractions_of_dataset:
+#     mydict = {}
+#     batchmodel = torch.load("BatchSize" + str(X_train.shape[0]//fraction) + ".pth")
+#     for key, value in batchmodel.items():
+#         mydict[key] = value
+#     model.load_state_dict(mydict)
+#
+#     j = 0
+#     for datatype in [(X_train, y_train), (X_test, y_test)]:
+#         dataX = datatype[0]
+#         datay = datatype[1]
+#         for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
+#             ops = opfun(dataX[smpl])
+#             tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
+#             # data_for_plotting[i, j] +=
+#             var = F.nll_loss(ops, tgts).data.numpy() / 10
+#             if j == 1:
+#                 data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
+#         j += 1
+#     print(data_for_plotting[i])
+#     i += 1
+# np.save('intermediate-values', data_for_plotting)
 
 # Data loading code
 default_transform = {
-    'train': get_transform(cifar10,
+    'train': get_transform("cifar10",
                            input_size=None, augment=True),
-    'eval': get_transform(cifar10,
+    'eval': get_transform("cifar10",
                           input_size=None, augment=False)
 }
 transform = getattr(model, 'input_transform', default_transform)
@@ -362,7 +358,7 @@ transform = getattr(model, 'input_transform', default_transform)
 # define loss function (criterion) and optimizer
 criterion = getattr(model, 'criterion', nn.CrossEntropyLoss)()
 criterion.type(torch.cuda.FloatTensor)
-model.type(torch.cuda.FloatTensor)
+# model.type(torch.cuda.FloatTensor)
 
 # logging.info('\nValidation Loss {val_loss:.4f} \t'
 #              'Validation Prec@1 {val_prec1:.3f} \t'
@@ -381,7 +377,7 @@ for fraction in fractions_of_dataset:
     for key, value in batchmodel.items():
         mydict[key] = value
     model.load_state_dict(mydict)
-    val_data = get_dataset(cifar10, 'val', transform['eval'])
+    val_data = get_dataset("cifar10", 'val', transform['eval'])
     val_loader = torch.utils.data.DataLoader(
         val_data,
         batch_size=X_train.shape[0]//fraction, shuffle=False,
