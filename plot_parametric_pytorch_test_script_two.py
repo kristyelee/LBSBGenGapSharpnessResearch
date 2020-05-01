@@ -133,7 +133,7 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
     data_time = AverageMeter()
     losses = AverageMeter()
     top1 = AverageMeter()
-    top5 = AverageMeter()
+    top = AverageMeter()
 
     end = time.time()
     grad_vec = None
@@ -286,9 +286,10 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
   #rand_selections = (np.random.rand(bounds.shape[0])+1e-6)*0.99
   #init_guess = np.multiply(1.-rand_selections, bounds[:,0])+np.multiply(rand_selections, bounds[:,1])
 
-  print(init_guess.shape)
-  for i in range(len(bounds)):
-      bounds[i] = (bounds[i][0],bounds[i][1])
+  #debugging
+  # print(init_guess.shape)
+  # for i in range(len(bounds)):
+  #     bounds[i] = (bounds[i][0],bounds[i][1])
   minimum_x, f_x, d = sciopt.fmin_l_bfgs_b(func, init_guess, maxiter=10, bounds=list(bounds), disp=1)
     #factr=10.,
     #pgtol=1.e-12,
@@ -299,7 +300,7 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
 
   # recover the model
   x0 = torch.from_numpy(x0).float()
-  x0 = x0.cuda()
+  # x0 = x0.cuda()
   x_start = 0
   for p in model.parameters():
       psize = p.data.size()
