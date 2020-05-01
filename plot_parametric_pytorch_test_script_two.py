@@ -133,7 +133,7 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
     data_time = AverageMeter()
     losses = AverageMeter()
     top1 = AverageMeter()
-    top = AverageMeter()
+    top5 = AverageMeter()
 
     end = time.time()
     grad_vec = None
