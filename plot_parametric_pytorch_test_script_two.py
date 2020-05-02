@@ -313,6 +313,7 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
 
   return sharpness
 
+############################
 
 fractions_of_dataset = [100, 200]
 fractions_of_dataset.reverse()
