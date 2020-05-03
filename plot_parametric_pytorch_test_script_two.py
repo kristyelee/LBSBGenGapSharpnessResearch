@@ -147,7 +147,7 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
         data_time.update(time.time() - end)
         if 0 is not None:
             target = target.cuda(device=None) #comment out if running on CPU
-        input_var = Variable(inputs.type(torch.cuda.FloatTensor))
+        input_var = Variable(inputs.type(torch.FloatTensor))
         target_var = Variable(target)
 
         # compute output
