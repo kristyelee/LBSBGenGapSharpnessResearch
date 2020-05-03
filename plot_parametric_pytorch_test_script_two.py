@@ -141,13 +141,13 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
       optimizer = torch.optim.SGD(model.parameters(), 1.0)
       optimizer.zero_grad()  # only zerout at the beginning
 
-
+    
     for i, (inputs, target) in enumerate(data_loader):
         # measure data loading time
         data_time.update(time.time() - end)
         if 0 is not None:
-            continue# target = target.cuda(device=None) #commented out
-        input_var = Variable(inputs.type(torch.cuda.FloatTensor), volatile=not training)
+            target = target.cuda(device=None) #comment out if running on CPU
+        input_var = Variable(inputs.type(torch.cuda.FloatTensor))
         target_var = Variable(target)
 
         # compute output
@@ -172,7 +172,7 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
                 loss = criterion(output, mini_target_var)
 
                 prec1, prec5 = accuracy(output.data, mini_target_var.data, topk=(1, 5))
-                losses.update(loss.data[0], mini_input_var.size(0))
+                losses.update(loss.data, mini_input_var.size(0))
                 top1.update(prec1[0], mini_input_var.size(0))
                 top5.update(prec5[0], mini_input_var.size(0))
 
@@ -219,7 +219,7 @@ def validate(data_loader, model, criterion, epoch):
 def get_minus_cross_entropy(x, data_loader, model, criterion, training=False):
   if type(x).__module__ == np.__name__:
     x = torch.from_numpy(x).float()
-    # x = x.cuda()
+    x = x.cuda()
   # switch to evaluate mode
   model.eval()
 
@@ -300,7 +300,7 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
 
   # recover the model
   x0 = torch.from_numpy(x0).float()
-  # x0 = x0.cuda()
+  x0 = x0.cuda()
   x_start = 0
   for p in model.parameters():
       psize = p.data.size()

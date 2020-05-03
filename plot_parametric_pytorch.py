@@ -385,7 +385,7 @@ for fraction in fractions_of_dataset:
         val_data,
         batch_size=X_train.shape[0]//fraction, shuffle=False,
         num_workers=8, pin_memory=True) #batch
-    val_loader.to(cuda) # are we using model.to(cuda) here?
+    #val_loader.to(cuda) # are we using model.to(cuda) here?
     model.to(cuda)
     val_result = validate(val_loader, model, criterion, 0)
     val_loss, val_prec1, val_prec5 = [val_result[r]
