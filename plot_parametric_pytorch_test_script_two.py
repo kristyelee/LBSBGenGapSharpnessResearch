@@ -187,12 +187,12 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
     if training:
         for p in model.parameters():
           print(p.grad)
-            if p.grad is not None: # new line
-                p.grad.data.div_(len(data_loader))
-                if grad_vec is None:
-                    grad_vec = p.grad.data.view(-1)
-                else:
-                    grad_vec = torch.cat((grad_vec, p.grad.data.view(-1)))
+          if p.grad is not None: # new line
+              p.grad.data.div_(len(data_loader))
+              if grad_vec is None:
+                grad_vec = p.grad.data.view(-1)
+              else:
+                grad_vec = torch.cat((grad_vec, p.grad.data.view(-1)))
 
     #logging.info('{phase} - \t'
     #             'Loss {loss.avg:.4f}\t'
