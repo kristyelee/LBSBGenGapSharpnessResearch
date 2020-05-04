@@ -143,7 +143,7 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
       optimizer = torch.optim.SGD(model.parameters(), 1.0)
       optimizer.zero_grad()  # only zerout at the beginning
 
-    
+
     for i, (inputs, target) in enumerate(data_loader):
         # measure data loading time
         data_time.update(time.time() - end)
@@ -186,6 +186,7 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
     # reshape and averaging gradients
     if training:
         for p in model.parameters():
+          print(p.grad)
             if p.grad is not None: # new line
                 p.grad.data.div_(len(data_loader))
                 if grad_vec is None:

@@ -33,7 +33,7 @@ parser.add_argument('--epochs', default=2, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
-parser.add_argument('-b', '--batch-size', default=20, type=int,
+parser.add_argument('-b', '--batch-size', default=256, type=int,
                     metavar='N', help='mini-batch size (default: 256)')
 parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
                     metavar='LR', help='initial learning rate')
@@ -63,6 +63,7 @@ best_prec1 = 0
 def main():
     global args, best_prec1
     args = parser.parse_args()
+    device = torch.device('cuda:0')
 
     args.distributed = args.world_size > 1
 
@@ -74,20 +75,25 @@ def main():
     if args.pretrained:
         print("=> using pre-trained model '{}'".format(args.arch))
         model = models.__dict__[args.arch](pretrained=True)
+        model.to(device)
     else:
         print("=> creating model '{}'".format(args.arch))
         model = models.__dict__[args.arch]()
+        model.to(device)
 
     if not args.distributed:
         args.gpus = [int(i) for i in args.gpus.split(',')]
         if args.arch.startswith('alexnet') or args.arch.startswith('vgg'):
             model.features = torch.nn.DataParallel(model.features, args.gpus)
             model.cuda()
+            model.to(device)
         else:
             model = torch.nn.DataParallel(model, args.gpus).cuda()
+            model.to(device)
     else:
         model.cuda()
         model = torch.nn.parallel.DistributedDataParallel(model)
+        model.to(device)
 
     # define loss function (criterion) and optimizer
     criterion = nn.CrossEntropyLoss().cuda()
