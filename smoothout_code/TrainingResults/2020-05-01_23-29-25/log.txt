@@ -1,0 +1,4 @@
+2020-05-01 23:29:25 - INFO - saving to ./TrainingResults/2020-05-01_23-29-25
+2020-05-01 23:29:25 - INFO - creating model resnet
+2020-05-01 23:29:25 - INFO - created model with configuration: {'input_size': None, 'dataset': 'cifar10'}
+2020-05-01 23:29:25 - INFO - number of parameters: 661338

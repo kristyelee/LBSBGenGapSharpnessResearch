@@ -1,0 +1,3 @@
+2020-05-01 23:54:58 - INFO - saving to ./TrainingResults/2020-05-01_23-54-58
+2020-05-01 23:54:58 - INFO - created model with configuration: {'input_size': None, 'dataset': 'cifar10'}
+2020-05-01 23:54:58 - INFO - number of parameters: 28149514
