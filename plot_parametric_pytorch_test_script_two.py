@@ -65,6 +65,7 @@ X_test = X_test.astype('float32')
 X_test = np.transpose(X_test, axes=(0, 3, 1, 2))
 X_train /= 255
 X_test /= 255
+device = torch.device('cuda:0')
 
 # This is where you can load any model of your choice.
 # I stole PyTorch Vision's VGG network and modified it to work on CIFAR-10.
@@ -148,7 +149,7 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
         data_time.update(time.time() - end)
         if 0 is not None:
             target = target.cuda(device=None) #comment out if running on CPU
-        input_var = Variable(inputs.type(torch.FloatTensor))
+        input_var = Variable(inputs.type(torch.cuda.FloatTensor))
         target_var = Variable(target)
 
         # compute output
@@ -158,9 +159,9 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
 
             # measure accuracy and record loss
             prec1, prec5 = accuracy(output.data, target_var.data, topk=(1, 5))
-            losses.update(loss.data[0], input_var.size(0))
-            top1.update(prec1[0], input_var.size(0))
-            top5.update(prec5[0], input_var.size(0))
+            losses.update(loss.data, input_var.size(0))
+            top1.update(prec1, input_var.size(0))
+            top5.update(prec5, input_var.size(0))
 
         else:
             mini_inputs = input_var.chunk(256 // 256)
@@ -174,8 +175,8 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
 
                 prec1, prec5 = accuracy(output.data, mini_target_var.data, topk=(1, 5))
                 losses.update(loss.data, mini_input_var.size(0))
-                top1.update(prec1[0], mini_input_var.size(0))
-                top5.update(prec5[0], mini_input_var.size(0))
+                top1.update(prec1, mini_input_var.size(0))
+                top5.update(prec5, mini_input_var.size(0))
 
                 # compute gradient and do SGD step
                 loss.backward()
