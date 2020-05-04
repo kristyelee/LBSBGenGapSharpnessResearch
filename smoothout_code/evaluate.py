@@ -230,7 +230,7 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
         # measure data loading time
         data_time.update(time.time() - end)
         if args.gpus is not None:
-            target = target.cuda(async=True)
+            ttarget = target.cuda(device=device) 
         input_var = Variable(inputs.type(args.type), volatile=not training)
         target_var = Variable(target)
 
