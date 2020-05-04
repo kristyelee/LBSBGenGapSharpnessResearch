@@ -322,7 +322,7 @@ fractions_of_dataset = [100, 200]
 fractions_of_dataset.reverse()
 grid_size = len(fractions_of_dataset) #How many points of interpolation between [0, 5000]
 data_for_plotting = np.zeros((grid_size, 3)) #four lines  --> change to 3 in Figure 4
-# batch_range = np.linspace(0, 5000, grid_size)
+batch_range = np.linspace(0, 5000, grid_size)
 
 i = 0
 
