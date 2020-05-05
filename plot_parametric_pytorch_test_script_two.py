@@ -187,7 +187,6 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
     # reshape and averaging gradients
     if training:
         for p in model.parameters():
-          print(p.grad)
           if p.grad is not None: # new line
               p.grad.data.div_(len(data_loader))
               if grad_vec is None:
@@ -413,7 +412,7 @@ for fraction in fractions_of_dataset:
 import matplotlib.pyplot as plt
 fig, ax1 = plt.subplots()
 ax2 = ax1.twinx()
-ax1.semilogy(batch_range, data_for_plotting[:, 0], 'b-')
+ax1.plot(batch_range, data_for_plotting[:, 0], 'b-')
 
 ax2.plot(batch_range, data_for_plotting[:, 1], 'r-')
 ax2.plot(batch_range, data_for_plotting[:, 2], 'r--')
