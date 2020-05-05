@@ -141,11 +141,6 @@ def main():
     }
     transform = getattr(model, 'input_transform', default_transform)
 
-    # define loss function (criterion) and optimizer
-    criterion = getattr(model, 'criterion', nn.CrossEntropyLoss)()
-    criterion.type(args.type)
-    # model.type(args.type)
-
     train_dataset = get_dataset(args.dataset, 'train', transform['train'])
 
     val_data = get_dataset(args.dataset, 'val', transform['eval'])
