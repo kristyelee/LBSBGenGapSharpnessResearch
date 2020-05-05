@@ -2,7 +2,7 @@ import argparse
 import os
 import shutil
 import time
-
+from preprocess import get_transform
 import torch
 import torch.nn as nn
 import torch.nn.parallel
@@ -32,6 +32,8 @@ parser.add_argument('-j', '--workers', default=32, type=int, metavar='N',
                     help='number of data loading workers (default: 32)')
 parser.add_argument('--dataset', metavar='DATASET', default='cifar10',
                     help='dataset name or folder')
+parser.add_argument('--input_size', type=int, default=None,
+                    help='image input size')
 parser.add_argument('--epochs', default=2, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
