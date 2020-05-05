@@ -420,7 +420,7 @@ ax2.plot(batch_range, data_for_plotting[:, 2], 'r--')
 ax1.set_xlabel('Batch Size')
 ax1.set_ylabel('Testing Accuracy', color='b')
 ax2.set_ylabel('Sharpness', color='r')
-ax1.legend(('1e-3', '5e-4'), loc=0)
+ax2.legend(('1e-3', '5e-4'), loc=0)
 
 ax1.grid(b=True, which='both')
 plt.savefig('AccuracySharpnessPlot.pdf')
