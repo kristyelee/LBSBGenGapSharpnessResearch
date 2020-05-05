@@ -58,6 +58,7 @@ from keras.datasets import cifar10
 from copy import deepcopy
 import vgg
 
+cudnn.benchmark = True
 (X_train, y_train), (X_test, y_test) = cifar10.load_data()
 X_train = X_train.astype('float32')
 X_train = np.transpose(X_train, axes=(0, 3, 1, 2))
@@ -82,7 +83,7 @@ opfun = lambda X: model.forward(Variable(torch.from_numpy(X)))
 predsfun = lambda op: np.argmax(op.data.numpy(), 1)
 
 # Do the forward pass, then compute the accuracy
-accfun   = lambda op, y: np.mean(np.equal(predsfun(op), y.squeeze()))*100
+accfun = lambda op, y: np.mean(np.equal(predsfun(op), y.squeeze()))*100
 
 # Initial point
 x0 = deepcopy(model.state_dict())
@@ -129,7 +130,7 @@ print('Loaded stored solutions')
 #Functions relevant for calculating Sharpness
 
 def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=None):
-    if 0 and len(0) > 1:
+    if 0 and len(1) > 1:
         model = torch.nn.DataParallel(model, 0)
     # print(data_loader)
     data_time = AverageMeter()
@@ -147,7 +148,7 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
     for i, (inputs, target) in enumerate(data_loader):
         # measure data loading time
         data_time.update(time.time() - end)
-        if 0 is not None:
+        if 1 is not None:
             target = target.cuda(device=device) #comment out if running on CPU
         input_var = Variable(inputs.type(torch.cuda.FloatTensor))
         target_var = Variable(target)
@@ -289,10 +290,6 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
   #rand_selections = (np.random.rand(bounds.shape[0])+1e-6)*0.99
   #init_guess = np.multiply(1.-rand_selections, bounds[:,0])+np.multiply(rand_selections, bounds[:,1])
 
-  #debugging
-  # print(init_guess.shape)
-  # for i in range(len(bounds)):
-  #     bounds[i] = (bounds[i][0],bounds[i][1])
   minimum_x, f_x, d = sciopt.fmin_l_bfgs_b(func, init_guess, maxiter=10, bounds=list(bounds), disp=1)
     #factr=10.,
     #pgtol=1.e-12,
@@ -300,6 +297,7 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
   f_x = -f_x
   logging.info('max loss f_x = {loss:.4f}'.format(loss=f_x))
   sharpness = (f_x - f_x0)/(1+f_x0)*100
+  print(sharpness)
 
   # recover the model
   x0 = torch.from_numpy(x0).float()

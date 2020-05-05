@@ -58,6 +58,7 @@ from keras.datasets import cifar10
 from copy import deepcopy
 import vgg
 
+cudnn.benchmark = True
 (X_train, y_train), (X_test, y_test) = cifar10.load_data()
 X_train = X_train.astype('float32')
 X_train = np.transpose(X_train, axes=(0, 3, 1, 2))
@@ -65,13 +66,14 @@ X_test = X_test.astype('float32')
 X_test = np.transpose(X_test, axes=(0, 3, 1, 2))
 X_train /= 255
 X_test /= 255
+device = torch.device('cuda:0')
 
 # This is where you can load any model of your choice.
 # I stole PyTorch Vision's VGG network and modified it to work on CIFAR-10.
 # You can take this line out and add any other network and the code
 # should run just fine.
 model = vgg.vgg11_bn()
-model.to(cuda)
+model.to(device)
 
 # Forward pass
 opfun = lambda X: model.forward(Variable(torch.from_numpy(X)))
@@ -80,7 +82,7 @@ opfun = lambda X: model.forward(Variable(torch.from_numpy(X)))
 predsfun = lambda op: np.argmax(op.data.numpy(), 1)
 
 # Do the forward pass, then compute the accuracy
-accfun   = lambda op, y: np.mean(np.equal(predsfun(op), y.squeeze()))*100
+accfun = lambda op, y: np.mean(np.equal(predsfun(op), y.squeeze()))*100
 
 # Initial point
 x0 = deepcopy(model.state_dict())
@@ -130,7 +132,7 @@ print('Loaded stored solutions')
 #Functions relevant for calculating Sharpness
 
 def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=None):
-    if 0 and len(0) > 1:
+    if 0:
         model = torch.nn.DataParallel(model, 0)
 
     data_time = AverageMeter()
@@ -148,21 +150,18 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
     for i, (inputs, target) in enumerate(data_loader):
         # measure data loading time
         data_time.update(time.time() - end)
-        if 0 is not None:
-            target = target.cuda(True)
-        input_var = Variable(inputs.type(torch.cuda.FloatTensor), volatile=not training)
+        if 1 is not None:
+          target = target.cuda(device=device)
+        input_var = Variable(inputs.type(torch.cuda.FloatTensor))
         target_var = Variable(target)
 
         # compute output
         if not training:
-            output = model(input_var)
-            loss = criterion(output, target_var)
-
-            # measure accuracy and record loss
+          # measure accuracy and record loss
             prec1, prec5 = accuracy(output.data, target_var.data, topk=(1, 5))
-            losses.update(loss.data[0], input_var.size(0))
-            top1.update(prec1[0], input_var.size(0))
-            top5.update(prec5[0], input_var.size(0))
+            losses.update(loss.data, input_var.size(0))
+            top1.update(prec1, input_var.size(0))
+            top5.update(prec5, input_var.size(0))
 
         else:
             mini_inputs = input_var.chunk(256 // 256)
@@ -175,9 +174,9 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
                 loss = criterion(output, mini_target_var)
 
                 prec1, prec5 = accuracy(output.data, mini_target_var.data, topk=(1, 5))
-                losses.update(loss.data[0], mini_input_var.size(0))
-                top1.update(prec1[0], mini_input_var.size(0))
-                top5.update(prec5[0], mini_input_var.size(0))
+                losses.update(loss.data, mini_input_var.size(0))
+                top1.update(prec1, mini_input_var.size(0))
+                top5.update(prec5, mini_input_var.size(0))
 
                 # compute gradient and do SGD step
                 loss.backward()
@@ -186,12 +185,14 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
 
     # reshape and averaging gradients
     if training:
-      for p in model.parameters():
-        p.grad.data.div_(len(data_loader))
-        if grad_vec is None:
-          grad_vec = p.grad.data.view(-1)
-        else:
-          grad_vec = torch.cat((grad_vec, p.grad.data.view(-1)))
+        for p in model.parameters():
+          print(p.grad)
+          if p.grad is not None: # new line
+              p.grad.data.div_(len(data_loader))
+              if grad_vec is None:
+                grad_vec = p.grad.data.view(-1)
+              else:
+                grad_vec = torch.cat((grad_vec, p.grad.data.view(-1)))
 
     #logging.info('{phase} - \t'
     #             'Loss {loss.avg:.4f}\t'
@@ -299,6 +300,7 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
   f_x = -f_x
   logging.info('max loss f_x = {loss:.4f}'.format(loss=f_x))
   sharpness = (f_x - f_x0)/(1+f_x0)*100
+  print(sharpness)
 
   # recover the model
   x0 = torch.from_numpy(x0).float()
@@ -315,14 +317,32 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
 
   return sharpness
 
+##########################################
 
 fractions_of_dataset = [10, 16, 20, 25, 40, 50, 80, 100, 200, 400, 625, 1000, 2000]
 fractions_of_dataset.reverse()
 grid_size = len(fractions_of_dataset) #How many points of interpolation between [0, 5000]
 data_for_plotting = np.zeros((grid_size, 3)) #four lines  --> change to 3 in Figure 4
-# batch_range = np.linspace(0, 5000, grid_size)
+batch_range = np.linspace(0, 5000, grid_size)
+sharpnesses1eNeg3 = []
+sharpnesses5eNeg4 = []
 
 i = 0
+
+# Data loading code
+default_transform = {
+    'train': get_transform("cifar10",
+                           input_size=None, augment=True),
+    'eval': get_transform("cifar10",
+                          input_size=None, augment=False)
+}
+transform = getattr(model, 'input_transform', default_transform)
+
+# define loss function (criterion) and optimizer
+criterion = getattr(model, 'criterion', nn.CrossEntropyLoss)()
+criterion.type(torch.cuda.FloatTensor)
+model.type(torch.cuda.FloatTensor)
+
 
 # Fill in test accuracy values
 # for `grid_size' points in the interpolation
@@ -340,45 +360,11 @@ for fraction in fractions_of_dataset:
         for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
             ops = opfun(dataX[smpl])
             tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
-            # data_for_plotting[i, j] +=
             var = F.nll_loss(ops, tgts).data.numpy() / 10
             if j == 1:
                 data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
         j += 1
     print(data_for_plotting[i])
-    i += 1
-np.save('intermediate-values', data_for_plotting)
-# Data loading code
-default_transform = {
-    'train': get_transform("cifar10",
-                           input_size=None, augment=True),
-    'eval': get_transform("cifar10",
-                          input_size=None, augment=False)
-}
-transform = getattr(model, 'input_transform', default_transform)
-
-# define loss function (criterion) and optimizer
-criterion = getattr(model, 'criterion', nn.CrossEntropyLoss)()
-criterion.type(torch.cuda.FloatTensor)
-model.type(torch.cuda.FloatTensor)
-
-# logging.info('\nValidation Loss {val_loss:.4f} \t'
-#              'Validation Prec@1 {val_prec1:.3f} \t'
-#              'Validation Prec@5 {val_prec5:.3f} \n'
-#              .format(val_loss=val_loss,
-#                      val_prec1=val_prec1,
-#                      val_prec5=val_prec5))
-
-sharpnesses1eNeg3 = []
-sharpnesses5eNeg4 = []
-i = 0
-#for batch in bactch_range
-for fraction in fractions_of_dataset:
-    mydict = {}
-    batchmodel = torch.load("BatchSize" + str(X_train.shape[0]//fraction) + ".pth")
-    for key, value in batchmodel.items():
-        mydict[key] = value
-    model.load_state_dict(mydict)
     val_data = get_dataset(cifar10, 'val', transform['eval'])
 
     val_loader = torch.utils.data.DataLoader(
@@ -397,18 +383,15 @@ for fraction in fractions_of_dataset:
     sharpness = get_sharpness(val_loader, model, criterion, 0.0005, manifolds=0)
     sharpnesses5eNeg4.append(sharpness)
     data_for_plotting[i, 2] += sharpness
+
+
+
     i += 1
-
-
-# logging.info('sharpness {} = {}'.format(time,sharpness))
-# logging.info('sharpnesses = {}'.format(str(sharpnesses)))
-# _std = np.std(sharpnesses)*np.sqrt(5)/np.sqrt(5-1)
-# _mean = np.mean(sharpnesses)
-
+np.save('intermediate-values', data_for_plotting)
 
 
 # Actual plotting;
-# if matplotlib is not available, use any tool of your choice by
+# if matplotlib is not available, use any tool of your choice
 # loading intermediate-values.npy
 import matplotlib.pyplot as plt
 fig, ax1 = plt.subplots()
