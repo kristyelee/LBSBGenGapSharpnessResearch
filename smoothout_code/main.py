@@ -34,6 +34,8 @@ parser.add_argument('--dataset', metavar='DATASET', default='cifar10',
                     help='dataset name or folder')
 parser.add_argument('--input_size', type=int, default=None,
                     help='image input size')
+parser.add_argument('--augment', dest='augment', action='store_true',
+                    help='data augment')
 parser.add_argument('--epochs', default=2, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
