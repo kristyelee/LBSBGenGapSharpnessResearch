@@ -289,7 +289,7 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
   #rand_selections = (np.random.rand(bounds.shape[0])+1e-6)*0.99
   #init_guess = np.multiply(1.-rand_selections, bounds[:,0])+np.multiply(rand_selections, bounds[:,1])
 
-  minimum_x, f_x, d = sciopt.fmin_l_bfgs_b(func, init_guess, maxiter=10, bounds=list(bounds), disp=1)
+  minimum_x, f_x, d = sciopt.fmin_l_bfgs_b(func, init_guess, maxiter=10, bounds=list(bounds), disp=1, iprint=101)
     #factr=10.,
     #pgtol=1.e-12,
 
@@ -325,29 +325,29 @@ i = 0
 
 #Fill in test accuracy values
 #for `grid_size' points in the interpolation
-for fraction in fractions_of_dataset:
-    mydict = {}
-    batchmodel = torch.load("BatchSize" + str(X_train.shape[0]//fraction) + ".pth")
-    for key, value in batchmodel.items():
-        mydict[key] = value
-    model.load_state_dict(mydict)
-    # model.to(device)
+# for fraction in fractions_of_dataset:
+#     mydict = {}
+#     batchmodel = torch.load("BatchSize" + str(X_train.shape[0]//fraction) + ".pth")
+#     for key, value in batchmodel.items():
+#         mydict[key] = value
+#     model.load_state_dict(mydict)
+#     # model.to(device)
 
-    j = 0
-    for datatype in [(X_train, y_train), (X_test, y_test)]:
-        dataX = datatype[0]
-        datay = datatype[1]
-        for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
-            ops = opfun(dataX[smpl])
-            tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
-            # data_for_plotting[i, j] +=
-            var = F.nll_loss(ops, tgts).data.numpy() / 10
-            if j == 1:
-                data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
-        j += 1
-    print(data_for_plotting[i])
-    i += 1
-np.save('intermediate-values', data_for_plotting)
+#     j = 0
+#     for datatype in [(X_train, y_train), (X_test, y_test)]:
+#         dataX = datatype[0]
+#         datay = datatype[1]
+#         for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
+#             ops = opfun(dataX[smpl])
+#             tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
+#             # data_for_plotting[i, j] +=
+#             var = F.nll_loss(ops, tgts).data.numpy() / 10
+#             if j == 1:
+#                 data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
+#         j += 1
+#     print(data_for_plotting[i])
+#     i += 1
+# np.save('intermediate-values', data_for_plotting)
 
 # Data loading code
 default_transform = {
