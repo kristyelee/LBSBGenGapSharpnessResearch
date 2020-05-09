@@ -394,11 +394,14 @@ for fraction in fractions_of_dataset:
     sharpness = get_sharpness(val_loader, model, criterion, 0.001, manifolds=0)
     sharpnesses1eNeg3.append(sharpness)
     data_for_plotting[i, 1] += sharpness
+    print(sharpness)
     sharpness = get_sharpness(val_loader, model, criterion, 0.0005, manifolds=0)
     sharpnesses5eNeg4.append(sharpness)
     data_for_plotting[i, 2] += sharpness
+    print(sharpness)
     i += 1
 
+np.save('intermediate-values', data_for_plotting)
 
 # logging.info('sharpness {} = {}'.format(time,sharpness))
 # logging.info('sharpnesses = {}'.format(str(sharpnesses)))
