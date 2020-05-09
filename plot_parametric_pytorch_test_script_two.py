@@ -331,6 +331,7 @@ for fraction in fractions_of_dataset:
     for key, value in batchmodel.items():
         mydict[key] = value
     model.load_state_dict(mydict)
+    model.to(device)
 
     j = 0
     for datatype in [(X_train, y_train), (X_test, y_test)]:
