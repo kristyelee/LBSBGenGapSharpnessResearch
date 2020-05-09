@@ -73,11 +73,11 @@ device = torch.device('cuda:0')
 # You can take this line out and add any other network and the code
 # should run just fine.
 model = vgg.vgg11_bn()
-model.to(device)
+# model.to(device)
 
 
 # Forward pass
-opfun = lambda X: model.forward(Variable(torch.cuda.from_numpy(X)))
+opfun = lambda X: model.forward(Variable(torch.from_numpy(X)))
 
 # Forward pass through the network given the input
 predsfun = lambda op: np.argmax(op.data.numpy(), 1)
@@ -331,7 +331,7 @@ for fraction in fractions_of_dataset:
     for key, value in batchmodel.items():
         mydict[key] = value
     model.load_state_dict(mydict)
-    model.to(device)
+    # model.to(device)
 
     j = 0
     for datatype in [(X_train, y_train), (X_test, y_test)]:
