@@ -77,7 +77,7 @@ model.to(device)
 
 
 # Forward pass
-opfun = lambda X: model.forward(Variable(torch.from_numpy(X).cuda.FloatTensor))
+opfun = lambda X: model.forward(Variable(torch.cuda.from_numpy(X)))
 
 # Forward pass through the network given the input
 predsfun = lambda op: np.argmax(op.data.numpy(), 1)
