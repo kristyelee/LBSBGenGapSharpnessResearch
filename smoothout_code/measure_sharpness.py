@@ -140,14 +140,14 @@ def main():
 
     # create model
     model = vgg.vgg11_bn()
-    # logging.info("creating model %s", args.model)
-    # model = models.__dict__[args.model]
-    model_config = {'input_size': args.input_size, 'dataset': args.dataset}
-    mydict = {}
-    batchmodel = torch.load("BatchSize250.pth")
-    for key, value in batchmodel.items():
-        mydict[key] = value
-    model.load_state_dict(mydict)
+    logging.info("creating model %s", args.model)
+    model = models.__dict__[args.model]
+    # model_config = {'input_size': args.input_size, 'dataset': args.dataset}
+    # mydict = {}
+    # batchmodel = torch.load("BatchSize250.pth")
+    # for key, value in batchmodel.items():
+    #     mydict[key] = value
+    # model.load_state_dict(mydict)
 
     if args.model_config is not '':
         model_config = dict(model_config, **literal_eval(args.model_config))
@@ -155,16 +155,16 @@ def main():
     # model = model(**model_config)
     logging.info("created model with configuration: %s", model_config)
 
-    # optionally resume from a checkpoint
-    # if args.evaluate:
-    #     if not os.path.isfile(args.evaluate):
-    #         parser.error('invalid checkpoint: {}'.format(args.evaluate))
-    #     checkpoint = torch.load(args.evaluate, map_location=lambda storage, loc: storage)
-    #     model.load_state_dict(checkpoint['state_dict'])
-    #     logging.info("loaded checkpoint '%s' (epoch %s)",
-    #                  args.evaluate, checkpoint['epoch'])
-    # else:
-    #   raise ValueError("Please specify the path of evaluated model")
+    #optionally resume from a checkpoint
+    if args.evaluate:
+        if not os.path.isfile(args.evaluate):
+            parser.error('invalid checkpoint: {}'.format(args.evaluate))
+        checkpoint = torch.load(args.evaluate, map_location=lambda storage, loc: storage)
+        model.load_state_dict(checkpoint['state_dict'])
+        logging.info("loaded checkpoint '%s' (epoch %s)",
+                     args.evaluate, checkpoint['epoch'])
+    else:
+      raise ValueError("Please specify the path of evaluated model")
 
     num_parameters = sum([l.nelement() for l in model.parameters()])
     logging.info("number of parameters: %d", num_parameters)
@@ -214,7 +214,7 @@ def main():
     _std = np.std(sharpnesses)*np.sqrt(args.times)/np.sqrt(args.times-1)
     _mean = np.mean(sharpnesses)
     logging.info(u'mean sharpness = {sharpness:.4f}\u00b1{err:.4f}'.format(sharpness=_mean,err=_std))
-
+    print(sharpnesses)
     return
 
 
