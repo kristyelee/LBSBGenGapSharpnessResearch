@@ -153,7 +153,7 @@ def main():
         model_config = dict(model_config, **literal_eval(args.model_config))
 
     # model = model(**model_config)
-    logging.info("created model with configuration: %s", model_config)
+   # logging.info("created model with configuration: %s", model_config)
 
     #optionally resume from a checkpoint
     if args.evaluate:
