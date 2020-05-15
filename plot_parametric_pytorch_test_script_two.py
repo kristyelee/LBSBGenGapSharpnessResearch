@@ -73,7 +73,7 @@ device = torch.device('cuda:0')
 # You can take this line out and add any other network and the code
 # should run just fine.
 model = vgg.vgg11_bn()
-model.to(device)
+# model.to(device)
 
 
 # Forward pass
@@ -100,10 +100,10 @@ nb_epochs = 20
 hotstart = False
 
 if not hotstart:
-    for fractions_of_dataset in [100, 200]: #Run with 1/10th the data set, until 1/2000th the dataset
+    for fractions_of_dataset in [10, 16, 20, 25, 40, 50, 80, 100, 200, 400, 625, 1000, 2000]: #Run with 1/10th the data set, until 1/2000th the dataset
         optimizer = torch.optim.Adam(model.parameters())
         model.load_state_dict(x0)
-        model.to(device)
+        # model.to(device)
         average_loss_over_epoch = '-'
         print('Optimizing the network with batch size %d' % (X_train.shape[0]/fractions_of_dataset))
         np.random.seed(1337) #So that both networks see same sequence of batches
