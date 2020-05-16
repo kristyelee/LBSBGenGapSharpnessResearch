@@ -142,15 +142,15 @@ def main():
     model = models.__dict__[args.model]
     model_config = {'input_size': args.input_size, 'dataset': args.dataset}
     # create model
-    # model = vgg.vgg11_bn()
+    model = vgg.vgg11_bn()
     # logging.info("creating model %s", args.model)
     # model = models.__dict__[args.model]
     # model_config = {'input_size': args.input_size, 'dataset': args.dataset}
-    # mydict = {}
-    # batchmodel = torch.load("BatchSize250.pth")
-    # for key, value in batchmodel.items():
-    #     mydict[key] = value
-    # model.load_state_dict(mydict)
+    mydict = {}
+    batchmodel = torch.load("BatchSize250.pth")
+    for key, value in batchmodel.items():
+        mydict[key] = value
+    model.load_state_dict(mydict)
 
     if args.model_config is not '':
         model_config = dict(model_config, **literal_eval(args.model_config))
