@@ -139,8 +139,8 @@ def main():
                     RuntimeWarning)
 
     logging.info("creating model %s", args.model)
-    model = models.__dict__[args.model]
-    model_config = {'input_size': args.input_size, 'dataset': args.dataset}
+    # model = models.__dict__[args.model]
+    # model_config = {'input_size': args.input_size, 'dataset': args.dataset}
     # create model
     model = vgg.vgg11_bn()
     # logging.info("creating model %s", args.model)
@@ -159,15 +159,15 @@ def main():
    # logging.info("created model with configuration: %s", model_config)
 
     #optionally resume from a checkpoint
-    if args.evaluate:
-        if not os.path.isfile(args.evaluate):
-            parser.error('invalid checkpoint: {}'.format(args.evaluate))
-        checkpoint = torch.load(args.evaluate, map_location=lambda storage, loc: storage)
-        model.load_state_dict(checkpoint['state_dict'])
-        logging.info("loaded checkpoint '%s' (epoch %s)",
-                     args.evaluate, checkpoint['epoch'])
-    else:
-      raise ValueError("Please specify the path of evaluated model")
+    # if args.evaluate:
+    #     if not os.path.isfile(args.evaluate):
+    #         parser.error('invalid checkpoint: {}'.format(args.evaluate))
+    #     checkpoint = torch.load(args.evaluate, map_location=lambda storage, loc: storage)
+    #     model.load_state_dict(checkpoint['state_dict'])
+    #     logging.info("loaded checkpoint '%s' (epoch %s)",
+    #                  args.evaluate, checkpoint['epoch'])
+    # else:
+    #   raise ValueError("Please specify the path of evaluated model")
 
     num_parameters = sum([l.nelement() for l in model.parameters()])
     logging.info("number of parameters: %d", num_parameters)
