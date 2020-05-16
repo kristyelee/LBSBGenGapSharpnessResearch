@@ -138,10 +138,13 @@ def main():
       warnings.warn('--mini-batch-size is enforced to be set as --batch-size {}'.format(args.mini_batch_size),
                     RuntimeWarning)
 
-    # create model
-    model = vgg.vgg11_bn()
     logging.info("creating model %s", args.model)
     model = models.__dict__[args.model]
+    model_config = {'input_size': args.input_size, 'dataset': args.dataset}
+    # create model
+    # model = vgg.vgg11_bn()
+    # logging.info("creating model %s", args.model)
+    # model = models.__dict__[args.model]
     # model_config = {'input_size': args.input_size, 'dataset': args.dataset}
     # mydict = {}
     # batchmodel = torch.load("BatchSize250.pth")
