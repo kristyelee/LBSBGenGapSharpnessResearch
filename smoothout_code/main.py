@@ -133,30 +133,30 @@ def main():
 
     
     # Data loading code
-    default_transform = {
-        'train': get_transform(args.dataset,
-                               input_size=args.input_size, augment=args.augment),
-        'eval': get_transform(args.dataset,
-                              input_size=args.input_size, augment=False)
-    }
-    transform = getattr(model, 'input_transform', default_transform)
+    # default_transform = {
+    #     'train': get_transform(args.dataset,
+    #                            input_size=args.input_size, augment=args.augment),
+    #     'eval': get_transform(args.dataset,
+    #                           input_size=args.input_size, augment=False)
+    # }
+    # transform = getattr(model, 'input_transform', default_transform)
 
-    train_dataset = get_dataset(args.dataset, 'train', transform['train'])
+    # train_dataset = get_dataset(args.dataset, 'train', transform['train'])
 
-    val_data = get_dataset(args.dataset, 'val', transform['eval'])
-    val_loader = torch.utils.data.DataLoader(
-        val_data,
-        batch_size=args.batch_size, shuffle=False,
-        num_workers=args.workers, pin_memory=True)
+    # val_data = get_dataset(args.dataset, 'val', transform['eval'])
+    # val_loader = torch.utils.data.DataLoader(
+    #     val_data,
+    #     batch_size=args.batch_size, shuffle=False,
+    #     num_workers=args.workers, pin_memory=True)
 
-    # train_dataset = datasets.ImageFolder(
-    #     traindir,
-    #     transforms.Compose([
-    #         transforms.RandomResizedCrop(224),
-    #         transforms.RandomHorizontalFlip(),
-    #         transforms.ToTensor(),
-    #         normalize,
-    #     ]))
+    train_dataset = datasets.ImageFolder(
+        traindir,
+        transforms.Compose([
+            transforms.RandomResizedCrop(224),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            normalize,
+        ]))
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
@@ -167,15 +167,15 @@ def main():
         train_dataset, batch_size=args.batch_size, shuffle=(train_sampler is None),
         num_workers=args.workers, pin_memory=True, sampler=train_sampler)
 
-    # val_loader = torch.utils.data.DataLoader(
-    #     datasets.ImageFolder(valdir, transforms.Compose([
-    #         transforms.Resize(256),
-    #         transforms.CenterCrop(224),
-    #         transforms.ToTensor(),
-    #         normalize,
-    #     ])),
-    #     batch_size=args.batch_size, shuffle=False,
-    #     num_workers=args.workers, pin_memory=True)
+    val_loader = torch.utils.data.DataLoader(
+        datasets.ImageFolder(valdir, transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            normalize,
+        ])),
+        batch_size=args.batch_size, shuffle=False,
+        num_workers=args.workers, pin_memory=True)
 
     if args.evaluate:
         validate(val_loader, model, criterion)
