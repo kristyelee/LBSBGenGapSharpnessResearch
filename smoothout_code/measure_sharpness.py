@@ -242,7 +242,7 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
         data_time.update(time.time() - end)
         # if args.gpus is not None:
         #     # target = target.cuda(a)
-        input_var = Variable(inputs.type(torch.cuda.FloatTensor), volatile=not training)
+        input_var = Variable(inputs.type(torch.FloatTensor))
         target_var = Variable(target)
 
         # compute output
