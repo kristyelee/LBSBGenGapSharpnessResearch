@@ -24,7 +24,7 @@ model_urls = {
 class VGG(nn.Module):
     def __init__(self, features):
         super(VGG, self).__init__()
-        self.features = features
+        self.features = features.cuda()
         self.classifier = nn.Sequential(
             nn.Dropout(),
             nn.Linear(512, 4096),
