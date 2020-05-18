@@ -37,6 +37,9 @@ class VGG(nn.Module):
         self._initialize_weights()
 
     def forward(self, x):
+        device = torch.device('cuda:0')
+        x.cuda()
+        x.to(device)
         x = self.features(x)
         x = x.view(x.size(0), -1)
         x = self.classifier(x)

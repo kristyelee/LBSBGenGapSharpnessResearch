@@ -1,4 +1,5 @@
 """
+I used code from the Nitish Shirish Keskar and Wei Wen
 Reproduces the parametric plot experiment from the paper
 for a network like C3.
 
@@ -75,6 +76,7 @@ device = torch.device('cuda:0')
 model = vgg.vgg11_bn()
 model.to(device)
 
+
 # Forward pass
 opfun = lambda X: model.forward(Variable(torch.from_numpy(X)))
 
@@ -91,29 +93,31 @@ x0 = deepcopy(model.state_dict())
 # Choose a large value since LB training needs higher values
 # Changed from 150 to 30
 nb_epochs = 30
+batch_range = np.linspace(0, 5000, 50)
+for i in range(len(batch_range)):
+    batch_range[i] = ceil(batch_range[i])
+    batch_range[i] -= batch_range[i] % 5
 
-
-# If SB.pth and LB.pth are available
-# set hotstart = True and run only the
 # parametric plot (i.e., don't train the network)
 hotstart = False
 
 if not hotstart:
-    for fractions_of_dataset in [10, 16, 20, 25, 40, 50, 80, 100, 200, 400, 625, 1000, 2000]: #Run with 1/10th the data set, until 1/2000th the dataset
+    for batch_size in batch_range: #Run with 1/10th the data set, until 1/2000th the dataset
         optimizer = torch.optim.Adam(model.parameters())
         model.load_state_dict(x0)
+        model.to(device)
         average_loss_over_epoch = '-'
-        print('Optimizing the network with batch size %d' % (X_train.shape[0]/fractions_of_dataset))
+        print('Optimizing the network with batch size %d' % batch_size)
         np.random.seed(1337) #So that both networks see same sequence of batches
         for e in range(nb_epochs):
             model.eval()
             print('Epoch:', e, ' of ', nb_epochs, 'Average loss:', average_loss_over_epoch)
             average_loss_over_epoch = 0
             # Checkpoint the model every epoch
-            torch.save(model.state_dict(), "BatchSize" + str(X_train.shape[0]//fractions_of_dataset) + ".pth")
+            torch.save(model.state_dict(), "30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
 
             # Training loop!
-            for smpl in np.split(np.random.permutation(range(X_train.shape[0])), fractions_of_dataset):
+            for smpl in np.split(np.random.permutation(range(X_train.shape[0])), X_train.shape[0] // batch_size):
                 model.train()
                 optimizer.zero_grad()
                 ops = opfun(X_train[smpl])
@@ -123,18 +127,16 @@ if not hotstart:
                 loss_fn.backward()
                 optimizer.step()
 
+
 # Load stored values
-# If hotstarted, loop is ignored and SB/LB files must be provided
-# mbatch = torch.load('LB.pth')
-# mstoch = torch.load('SB.pth')
 print('Loaded stored solutions')
 
-#Functions relevant for calculating Sharpness
+#Functions relevant for calculating sharpness
 
 def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=None):
-    if 0:
+    if 0 and len(1) > 1:
         model = torch.nn.DataParallel(model, 0)
-
+    # print(data_loader)
     data_time = AverageMeter()
     losses = AverageMeter()
     top1 = AverageMeter()
@@ -151,13 +153,16 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
         # measure data loading time
         data_time.update(time.time() - end)
         if 1 is not None:
-          target = target.cuda(device=device)
+            target = target.cuda(device=device) #comment out if running on CPU
         input_var = Variable(inputs.type(torch.cuda.FloatTensor))
         target_var = Variable(target)
 
         # compute output
         if not training:
-          # measure accuracy and record loss
+            output = model(input_var)
+            loss = criterion(output, target_var)
+
+            # measure accuracy and record loss
             prec1, prec5 = accuracy(output.data, target_var.data, topk=(1, 5))
             losses.update(loss.data, input_var.size(0))
             top1.update(prec1, input_var.size(0))
@@ -186,7 +191,6 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
     # reshape and averaging gradients
     if training:
         for p in model.parameters():
-          print(p.grad)
           if p.grad is not None: # new line
               p.grad.data.div_(len(data_loader))
               if grad_vec is None:
@@ -289,14 +293,10 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
   #rand_selections = (np.random.rand(bounds.shape[0])+1e-6)*0.99
   #init_guess = np.multiply(1.-rand_selections, bounds[:,0])+np.multiply(rand_selections, bounds[:,1])
 
-  minimum_x, f_x, d = sciopt.fmin_l_bfgs_b(
-    func,
-    init_guess,
-    maxiter=10,
-    bounds=bounds,
+  minimum_x, f_x, d = sciopt.fmin_l_bfgs_b(func, init_guess, maxiter=10, bounds=list(bounds), disp=1, iprint=101)
     #factr=10.,
     #pgtol=1.e-12,
-    disp=1)
+
   f_x = -f_x
   logging.info('max loss f_x = {loss:.4f}'.format(loss=f_x))
   sharpness = (f_x - f_x0)/(1+f_x0)*100
@@ -317,38 +317,21 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
 
   return sharpness
 
-##########################################
+############################
 
-fractions_of_dataset = [10, 16, 20, 25, 40, 50, 80, 100, 200, 400, 625, 1000, 2000]
-fractions_of_dataset.reverse()
-grid_size = len(fractions_of_dataset) #How many points of interpolation between [0, 5000]
-data_for_plotting = np.zeros((grid_size, 3)) #four lines  --> change to 3 in Figure 4
-batch_range = np.linspace(0, 5000, grid_size)
+# fractions_of_dataset = [10, 16, 20, 25, 40, 50, 80, 100, 200, 400, 625, 1000, 2000]
+# fractions_of_dataset.reverse()
+grid_size = 50 #How many points of interpolation between [0, 5000]
+data_for_plotting = np.zeros((grid_size, 3)) #3 lines on the graph
 sharpnesses1eNeg3 = []
 sharpnesses5eNeg4 = []
 
 i = 0
-
-# Data loading code
-default_transform = {
-    'train': get_transform("cifar10",
-                           input_size=None, augment=True),
-    'eval': get_transform("cifar10",
-                          input_size=None, augment=False)
-}
-transform = getattr(model, 'input_transform', default_transform)
-
-# define loss function (criterion) and optimizer
-criterion = getattr(model, 'criterion', nn.CrossEntropyLoss)()
-criterion.type(torch.cuda.FloatTensor)
-model.type(torch.cuda.FloatTensor)
-
-
 # Fill in test accuracy values
 # for `grid_size' points in the interpolation
-for fraction in fractions_of_dataset:
+for batch_size in batch_range:
     mydict = {}
-    batchmodel = torch.load("BatchSize" + str(X_train.shape[0]//fraction) + ".pth")
+    batchmodel = torch.load("BatchSize" + str(batch_size) + ".pth")
     for key, value in batchmodel.items():
         mydict[key] = value
     model.load_state_dict(mydict)
@@ -365,14 +348,40 @@ for fraction in fractions_of_dataset:
                 data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
         j += 1
     print(data_for_plotting[i])
+    np.save('30EpochC3Experiment-intermediate-values', data_for_plotting)
+    i += 1
+
+
+
+# Data loading code
+default_transform = {
+    'train': get_transform("cifar10",
+                           input_size=None, augment=True),
+    'eval': get_transform("cifar10",
+                          input_size=None, augment=False)
+}
+transform = getattr(model, 'input_transform', default_transform)
+
+# define loss function (criterion) and optimizer
+criterion = getattr(model, 'criterion', nn.CrossEntropyLoss)()
+criterion.type(torch.cuda.FloatTensor)
+#model.type(torch.cuda.FloatTensor)
+
+i = 0
+for batch_size in batch_range:
+    mydict = {}
+    batchmodel = torch.load("BatchSize" + str(batch_size) + ".pth")
+    for key, value in batchmodel.items():
+        mydict[key] = value
+    model.load_state_dict(mydict)
+    model.to(device)
     val_data = get_dataset(cifar10, 'val', transform['eval'])
 
     val_loader = torch.utils.data.DataLoader(
         val_data,
         batch_size=X_train.shape[0]//fraction, shuffle=False,
         num_workers=8, pin_memory=True) #batch
-    #val_loader.to(cuda) # are we using model.to(cuda) here?
-    model.to(cuda)
+    model.to(device)
     val_result = validate(val_loader, model, criterion, 0)
     val_loss, val_prec1, val_prec5 = [val_result[r]
                                       for r in ['loss', 'prec1', 'prec5']]
@@ -380,23 +389,21 @@ for fraction in fractions_of_dataset:
     sharpness = get_sharpness(val_loader, model, criterion, 0.001, manifolds=0)
     sharpnesses1eNeg3.append(sharpness)
     data_for_plotting[i, 1] += sharpness
+    print(sharpness)
     sharpness = get_sharpness(val_loader, model, criterion, 0.0005, manifolds=0)
     sharpnesses5eNeg4.append(sharpness)
     data_for_plotting[i, 2] += sharpness
-
-
-
+    print(sharpness)
     i += 1
-np.save('intermediate-values', data_for_plotting)
-
+    np.save('30EpochC3Experiment-intermediate-values', data_for_plotting)
 
 # Actual plotting;
-# if matplotlib is not available, use any tool of your choice
+# if matplotlib is not available, use any tool of your choice by
 # loading intermediate-values.npy
 import matplotlib.pyplot as plt
 fig, ax1 = plt.subplots()
 ax2 = ax1.twinx()
-ax1.semilogy(batch_range, data_for_plotting[:, 0], 'b-')
+ax1.plot(batch_range, data_for_plotting[:, 0], 'b-')
 
 ax2.plot(batch_range, data_for_plotting[:, 1], 'r-')
 ax2.plot(batch_range, data_for_plotting[:, 2], 'r--')
@@ -404,7 +411,7 @@ ax2.plot(batch_range, data_for_plotting[:, 2], 'r--')
 ax1.set_xlabel('Batch Size')
 ax1.set_ylabel('Testing Accuracy', color='b')
 ax2.set_ylabel('Sharpness', color='r')
-ax1.legend(('1e-3', '5e-4'), loc=0)
+ax2.legend(('1e-3', '5e-4'), loc=0)
 
 ax1.grid(b=True, which='both')
 plt.savefig('BatchSizeVSTestAccuracySharpnessPlot.pdf')
