@@ -401,7 +401,7 @@ for fraction in fractions_of_dataset:
     data_for_plotting[i, 2] += sharpness
     print(sharpness)
     i += 1
-    np.save('intermediate-values', data_for_plotting)
+    np.save('intermediate-values2', data_for_plotting)
 
 # logging.info('sharpness {} = {}'.format(time,sharpness))
 # logging.info('sharpnesses = {}'.format(str(sharpnesses)))
