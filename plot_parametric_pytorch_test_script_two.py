@@ -99,7 +99,7 @@ nb_epochs = 2
 # parametric plot (i.e., don't train the network)
 hotstart = False
 
-if not hotstart:
+if hotstart:
     for fractions_of_dataset in [10, 16, 20, 25, 40, 50, 80, 100, 200, 400, 625, 1000, 2000]: #Run with 1/10th the data set, until 1/2000th the dataset
         optimizer = torch.optim.Adam(model.parameters())
         model.load_state_dict(x0)
@@ -316,7 +316,7 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
 
 ############################
 
-fractions_of_dataset = [100, 200]
+fractions_of_dataset = [10, 16, 20, 25, 40, 50, 80, 100, 200, 400, 625, 1000, 2000]
 fractions_of_dataset.reverse()
 grid_size = len(fractions_of_dataset) #How many points of interpolation between [0, 5000]
 data_for_plotting = np.zeros((grid_size, 3)) #four lines  --> change to 3 in Figure 4
@@ -326,29 +326,53 @@ i = 0
 
 #Fill in test accuracy values
 #for `grid_size' points in the interpolation
-for fraction in fractions_of_dataset:
-    mydict = {}
-    batchmodel = torch.load("BatchSize" + str(X_train.shape[0]//fraction) + ".pth")
-    for key, value in batchmodel.items():
-        mydict[key] = value
-    model.load_state_dict(mydict)
-    # model.to(device)
+# for fraction in fractions_of_dataset:
+#     mydict = {}
+#     batchmodel = torch.load("BatchSize" + str(X_train.shape[0]//fraction) + ".pth")
+#     for key, value in batchmodel.items():
+#         mydict[key] = value
+#     model.load_state_dict(mydict)
+#     # model.to(device)
 
-    j = 0
-    for datatype in [(X_train, y_train), (X_test, y_test)]:
-        dataX = datatype[0]
-        datay = datatype[1]
-        for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
-            ops = opfun(dataX[smpl])
-            tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
-            # data_for_plotting[i, j] +=
-            var = F.nll_loss(ops, tgts).data.numpy() / 10
-            if j == 1:
-                data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
-        j += 1
-    print(data_for_plotting[i])
-    i += 1
-np.save('intermediate-values', data_for_plotting)
+#     j = 0
+#     for datatype in [(X_train, y_train), (X_test, y_test)]:
+#         dataX = datatype[0]
+#         datay = datatype[1]
+#         for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
+#             ops = opfun(dataX[smpl])
+#             tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
+#             # data_for_plotting[i, j] +=
+#             var = F.nll_loss(ops, tgts).data.numpy() / 10
+#             if j == 1:
+#                 data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
+#         j += 1
+#     print(data_for_plotting[i])
+#     i += 1
+# np.save('intermediate-values', data_for_plotting)
+data_for_plotting[0,0] = 76.64
+data_for_plotting[1,0] = 82.98
+
+data_for_plotting[2,0] = 83.29
+
+data_for_plotting[3,0] = 83.06
+
+data_for_plotting[4,0] = 82.86
+
+data_for_plotting[5,0] = 82.72
+
+data_for_plotting[6,0] = 82.06
+
+data_for_plotting[7,0] = 81.05
+
+data_for_plotting[8,0] = 80.05
+
+data_for_plotting[9,0] = 78.02
+
+data_for_plotting[10,0] = 77.27
+
+data_for_plotting[11,0] = 75.91
+
+data_for_plotting[12,0] = 10.3
 
 # Data loading code
 default_transform = {
@@ -401,8 +425,7 @@ for fraction in fractions_of_dataset:
     data_for_plotting[i, 2] += sharpness
     print(sharpness)
     i += 1
-
-np.save('intermediate-values', data_for_plotting)
+    np.save('intermediate-values', data_for_plotting)
 
 # logging.info('sharpness {} = {}'.format(time,sharpness))
 # logging.info('sharpnesses = {}'.format(str(sharpnesses)))
