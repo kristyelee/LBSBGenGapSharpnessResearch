@@ -321,7 +321,7 @@ fractions_of_dataset.reverse()
 grid_size = len(fractions_of_dataset) #How many points of interpolation between [0, 5000]
 data_for_plotting = np.zeros((grid_size, 3)) #four lines  --> change to 3 in Figure 4
 batch_range = np.linspace(0, 5000, grid_size)
-
+data_for_plotting = np.load("intermediate-values2.npy")
 i = 0
 
 #Fill in test accuracy values
@@ -349,30 +349,6 @@ i = 0
 #     print(data_for_plotting[i])
 #     i += 1
 # np.save('intermediate-values', data_for_plotting)
-data_for_plotting[0,0] = 76.64
-data_for_plotting[1,0] = 82.98
-
-data_for_plotting[2,0] = 83.29
-
-data_for_plotting[3,0] = 83.06
-
-data_for_plotting[4,0] = 82.86
-
-data_for_plotting[5,0] = 82.72
-
-data_for_plotting[6,0] = 82.06
-
-data_for_plotting[7,0] = 81.05
-
-data_for_plotting[8,0] = 80.05
-
-data_for_plotting[9,0] = 78.02
-
-data_for_plotting[10,0] = 77.27
-
-data_for_plotting[11,0] = 75.91
-
-data_for_plotting[12,0] = 10.3
 
 # Data loading code
 default_transform = {
@@ -401,7 +377,7 @@ i = 0
 #for batch in bactch_range
 for fraction in fractions_of_dataset:
     mydict = {}
-    batchmodel = torch.load("BatchSize" + str(X_train.shape[0]//fraction) + ".pth")
+    batchmodel = torch.load("2BatchSize" + str(X_train.shape[0]//fraction) + ".pth")
     for key, value in batchmodel.items():
         mydict[key] = value
     model.load_state_dict(mydict)
@@ -451,5 +427,5 @@ ax2.set_ylabel('Sharpness', color='r')
 ax2.legend(('1e-3', '5e-4'), loc=0)
 
 ax1.grid(b=True, which='both')
-plt.savefig('AccuracySharpnessPlot.pdf')
+plt.savefig('2AccuracySharpnessPlot.pdf')
 print('Saved figure; Task complete')
