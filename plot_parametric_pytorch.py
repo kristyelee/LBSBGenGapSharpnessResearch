@@ -93,16 +93,13 @@ x0 = deepcopy(model.state_dict())
 # Choose a large value since LB training needs higher values
 # Changed from 150 to 30
 nb_epochs = 30
-batch_range = np.linspace(0, 5000, 50)
-for i in range(len(batch_range)):
-    batch_range[i] = ceil(batch_range[i])
-    batch_range[i] -= batch_range[i] % 5
+batch_range = [25, 40, 50, 64, 80, 128, 256, 512, 625, 1024, 1250, 1750, 2048, 2500, 3125, 4096, 5000]
 
 # parametric plot (i.e., don't train the network)
 hotstart = False
 
 if not hotstart:
-    for batch_size in batch_range: #Run with 1/10th the data set, until 1/2000th the dataset
+    for batch_size in batch_range:
         optimizer = torch.optim.Adam(model.parameters())
         model.load_state_dict(x0)
         model.to(device)
@@ -115,9 +112,16 @@ if not hotstart:
             average_loss_over_epoch = 0
             # Checkpoint the model every epoch
             torch.save(model.state_dict(), "./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
+            array = np.random.permutation(range(X_train.shape[0]))
+            slices = X_train.shape[0] // batch_size
+            beginning = 0
+            end = 1
 
             # Training loop!
-            for smpl in np.split(np.random.permutation(range(X_train.shape[0])), X_train.shape[0] // batch_size):
+            for _ in range(slices):
+                start_index = batch_size * beginning 
+                end_index = batch_size * end
+                smpl = array[start_index:end_index]
                 model.train()
                 optimizer.zero_grad()
                 ops = opfun(X_train[smpl])
@@ -126,6 +130,8 @@ if not hotstart:
                 average_loss_over_epoch += loss_fn.data.numpy() / fractions_of_dataset
                 loss_fn.backward()
                 optimizer.step()
+                beginning += 1
+                end += 1
 
 
 # Load stored values
@@ -331,7 +337,7 @@ i = 0
 # for `grid_size' points in the interpolation
 for batch_size in batch_range:
     mydict = {}
-    batchmodel = torch.load("./models/BatchSize" + str(batch_size) + ".pth")
+    batchmodel = torch.load("./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
     for key, value in batchmodel.items():
         mydict[key] = value
     model.load_state_dict(mydict)
@@ -370,7 +376,7 @@ criterion.type(torch.cuda.FloatTensor)
 i = 0
 for batch_size in batch_range:
     mydict = {}
-    batchmodel = torch.load("./models/BatchSize" + str(batch_size) + ".pth")
+    batchmodel = torch.load("./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
     for key, value in batchmodel.items():
         mydict[key] = value
     model.load_state_dict(mydict)
