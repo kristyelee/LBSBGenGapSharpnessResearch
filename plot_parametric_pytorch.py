@@ -114,7 +114,7 @@ if not hotstart:
             print('Epoch:', e, ' of ', nb_epochs, 'Average loss:', average_loss_over_epoch)
             average_loss_over_epoch = 0
             # Checkpoint the model every epoch
-            torch.save(model.state_dict(), "30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
+            torch.save(model.state_dict(), "./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
 
             # Training loop!
             for smpl in np.split(np.random.permutation(range(X_train.shape[0])), X_train.shape[0] // batch_size):
@@ -331,7 +331,7 @@ i = 0
 # for `grid_size' points in the interpolation
 for batch_size in batch_range:
     mydict = {}
-    batchmodel = torch.load("BatchSize" + str(batch_size) + ".pth")
+    batchmodel = torch.load("./models/BatchSize" + str(batch_size) + ".pth")
     for key, value in batchmodel.items():
         mydict[key] = value
     model.load_state_dict(mydict)
@@ -370,7 +370,7 @@ criterion.type(torch.cuda.FloatTensor)
 i = 0
 for batch_size in batch_range:
     mydict = {}
-    batchmodel = torch.load("BatchSize" + str(batch_size) + ".pth")
+    batchmodel = torch.load("./models/BatchSize" + str(batch_size) + ".pth")
     for key, value in batchmodel.items():
         mydict[key] = value
     model.load_state_dict(mydict)
