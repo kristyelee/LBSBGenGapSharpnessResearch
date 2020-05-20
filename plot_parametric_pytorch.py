@@ -92,11 +92,11 @@ x0 = deepcopy(model.state_dict())
 # Number of epochs to train for
 # Choose a large value since LB training needs higher values
 # Changed from 150 to 30
-nb_epochs = 30
-batch_range = [25, 40, 50, 64, 80, 128, 256, 512, 625, 1024, 1250, 1750, 2048, 2500, 3125, 4096, 5000]
+nb_epochs = 30 #[25, 40, 50]
+batch_range = [64, 80, 128, 256, 512, 625, 1024, 1250, 1750, 2048, 2500, 3125, 4096, 4500, 5000]
 
 # parametric plot (i.e., don't train the network)
-hotstart = False
+hotstart = True
 
 if not hotstart:
     for batch_size in batch_range:
@@ -127,7 +127,7 @@ if not hotstart:
                 ops = opfun(X_train[smpl])
                 tgts = Variable(torch.from_numpy(y_train[smpl]).long().squeeze())
                 loss_fn = F.nll_loss(ops, tgts)
-                average_loss_over_epoch += loss_fn.data.numpy() / fractions_of_dataset
+                average_loss_over_epoch += loss_fn.data.numpy() / (X_train.shape[0] // batch_size)
                 loss_fn.backward()
                 optimizer.step()
                 beginning += 1
@@ -327,12 +327,12 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
 
 # fractions_of_dataset = [10, 16, 20, 25, 40, 50, 80, 100, 200, 400, 625, 1000, 2000]
 # fractions_of_dataset.reverse()
-grid_size = 50 #How many points of interpolation between [0, 5000]
+grid_size = 18 #How many points of interpolation between [0, 5000]
 data_for_plotting = np.zeros((grid_size, 3)) #3 lines on the graph
 sharpnesses1eNeg3 = []
 sharpnesses5eNeg4 = []
 
-i = 0
+i = 3
 # Fill in test accuracy values
 # for `grid_size' points in the interpolation
 for batch_size in batch_range:
@@ -373,7 +373,7 @@ criterion = getattr(model, 'criterion', nn.CrossEntropyLoss)()
 criterion.type(torch.cuda.FloatTensor)
 #model.type(torch.cuda.FloatTensor)
 
-i = 0
+i = 3
 for batch_size in batch_range:
     mydict = {}
     batchmodel = torch.load("./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
@@ -381,7 +381,7 @@ for batch_size in batch_range:
         mydict[key] = value
     model.load_state_dict(mydict)
     model.to(device)
-    val_data = get_dataset(cifar10, 'val', transform['eval'])
+    val_data = get_dataset("cifar10", 'val', transform['eval'])
 
     val_loader = torch.utils.data.DataLoader(
         val_data,
