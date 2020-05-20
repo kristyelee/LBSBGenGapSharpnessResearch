@@ -328,34 +328,34 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
 # fractions_of_dataset = [10, 16, 20, 25, 40, 50, 80, 100, 200, 400, 625, 1000, 2000]
 # fractions_of_dataset.reverse()
 grid_size = 18 #How many points of interpolation between [0, 5000]
-data_for_plotting = np.zeros((grid_size, 3)) #3 lines on the graph
+#data_for_plotting = np.zeros((grid_size, 3)) #3 lines on the graph
 sharpnesses1eNeg3 = []
 sharpnesses5eNeg4 = []
-
+data_for_plotting = np.load("30EpochC3Experiment-intermediate-values.npy")
 i = 3
 # Fill in test accuracy values
 # for `grid_size' points in the interpolation
-for batch_size in batch_range:
-    mydict = {}
-    batchmodel = torch.load("./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
-    for key, value in batchmodel.items():
-        mydict[key] = value
-    model.load_state_dict(mydict)
+# for batch_size in batch_range:
+#     mydict = {}
+#     batchmodel = torch.load("./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
+#     for key, value in batchmodel.items():
+#         mydict[key] = value
+#     model.load_state_dict(mydict)
     
-    j = 0
-    for datatype in [(X_train, y_train), (X_test, y_test)]:
-        dataX = datatype[0]
-        datay = datatype[1]
-        for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
-            ops = opfun(dataX[smpl])
-            tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
-            var = F.nll_loss(ops, tgts).data.numpy() / 10
-            if j == 1:
-                data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
-        j += 1
-    print(data_for_plotting[i])
-    np.save('30EpochC3Experiment-intermediate-values', data_for_plotting)
-    i += 1
+#     j = 0
+#     for datatype in [(X_train, y_train), (X_test, y_test)]:
+#         dataX = datatype[0]
+#         datay = datatype[1]
+#         for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
+#             ops = opfun(dataX[smpl])
+#             tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
+#             var = F.nll_loss(ops, tgts).data.numpy() / 10
+#             if j == 1:
+#                 data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
+#         j += 1
+#     print(data_for_plotting[i])
+#     np.save('30EpochC3Experiment-intermediate-values', data_for_plotting)
+#     i += 1
 
 
 
@@ -385,7 +385,7 @@ for batch_size in batch_range:
 
     val_loader = torch.utils.data.DataLoader(
         val_data,
-        batch_size=X_train.shape[0]//fraction, shuffle=False,
+        batch_size=batch_size, shuffle=False,
         num_workers=8, pin_memory=True) #batch
     model.to(device)
     val_result = validate(val_loader, model, criterion, 0)
