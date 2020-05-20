@@ -93,10 +93,10 @@ x0 = deepcopy(model.state_dict())
 # Choose a large value since LB training needs higher values
 # Changed from 150 to 30
 nb_epochs = 30 #[25, 40, 50]
-batch_range = [64, 80, 128, 256, 512, 625, 1024, 1250, 1750, 2048, 2500, 3125, 4096, 4500, 5000]
+batch_range = [25]#[25, 40, 50, 64, 80, 128, 256, 512, 625, 1024, 1250, 1750, 2048, 2500, 3125, 4096, 4500, 5000]
 
 # parametric plot (i.e., don't train the network)
-hotstart = True
+hotstart = False
 
 if not hotstart:
     for batch_size in batch_range:
@@ -331,8 +331,8 @@ grid_size = 18 #How many points of interpolation between [0, 5000]
 #data_for_plotting = np.zeros((grid_size, 3)) #3 lines on the graph
 sharpnesses1eNeg3 = []
 sharpnesses5eNeg4 = []
-data_for_plotting = np.load("30EpochC3Experiment-intermediate-values.npy")
-i = 3
+#data_for_plotting = np.load("30EpochC3Experiment-intermediate-values.npy")
+i = 1
 # Fill in test accuracy values
 # for `grid_size' points in the interpolation
 # for batch_size in batch_range:
