@@ -1,6 +1,6 @@
 # Stolen from https://github.com/pytorch/vision/blob/master/torchvision/models/vgg.py
 # Mildly modified to work on CIFAR-10
-
+import torch
 import torch.nn as nn
 F = nn.functional
 import torch.utils.model_zoo as model_zoo
@@ -24,7 +24,7 @@ model_urls = {
 class VGG(nn.Module):
     def __init__(self, features):
         super(VGG, self).__init__()
-        self.features = features.cuda()
+        self.features = features
         self.classifier = nn.Sequential(
             nn.Dropout(),
             nn.Linear(512, 4096),
@@ -37,9 +37,6 @@ class VGG(nn.Module):
         self._initialize_weights()
 
     def forward(self, x):
-        device = torch.device('cuda:0')
-        x.cuda()
-        x.to(device)
         x = self.features(x)
         x = x.view(x.size(0), -1)
         x = self.classifier(x)
