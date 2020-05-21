@@ -67,7 +67,7 @@ X_test = X_test.astype('float32')
 X_test = np.transpose(X_test, axes=(0, 3, 1, 2))
 X_train /= 255
 X_test /= 255
-device = torch.device('cuda:0')
+device = torch.device('cuda:2')
 
 # This is where you can load any model of your choice.
 # I stole PyTorch Vision's VGG network and modified it to work on CIFAR-10.
@@ -93,7 +93,7 @@ x0 = deepcopy(model.state_dict())
 # Choose a large value since LB training needs higher values
 # Changed from 150 to 30
 nb_epochs = 30 #[25, 40, 50]
-batch_range = [25]#[25, 40, 50, 64, 80, 128, 256, 512, 625, 1024, 1250, 1750, 2048, 2500, 3125, 4096, 4500, 5000]
+batch_range = [25, 40, 50, 64, 80, 128, 256, 512, 625, 1024, 1250, 1750, 2048, 2500, 3125, 4096, 4500, 5000]
 
 # parametric plot (i.e., don't train the network)
 hotstart = False
@@ -325,37 +325,39 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
 
 ############################
 
-# fractions_of_dataset = [10, 16, 20, 25, 40, 50, 80, 100, 200, 400, 625, 1000, 2000]
-# fractions_of_dataset.reverse()
+
 grid_size = 18 #How many points of interpolation between [0, 5000]
 #data_for_plotting = np.zeros((grid_size, 3)) #3 lines on the graph
 sharpnesses1eNeg3 = []
 sharpnesses5eNeg4 = []
-#data_for_plotting = np.load("30EpochC3Experiment-intermediate-values.npy")
-i = 1
+data_for_plotting = np.load("30EpochC3Experiment-intermediate-values.npy")
+i = 0
 # Fill in test accuracy values
-# for `grid_size' points in the interpolation
-# for batch_size in batch_range:
-#     mydict = {}
-#     batchmodel = torch.load("./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
-#     for key, value in batchmodel.items():
-#         mydict[key] = value
-#     model.load_state_dict(mydict)
+#for `grid_size' points in the interpolation
+for batch_size in batch_range:
+    if i == 0:
+      i+= 1
+      continue
+    mydict = {}
+    batchmodel = torch.load("./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
+    for key, value in batchmodel.items():
+        mydict[key] = value
+    model.load_state_dict(mydict)
     
-#     j = 0
-#     for datatype in [(X_train, y_train), (X_test, y_test)]:
-#         dataX = datatype[0]
-#         datay = datatype[1]
-#         for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
-#             ops = opfun(dataX[smpl])
-#             tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
-#             var = F.nll_loss(ops, tgts).data.numpy() / 10
-#             if j == 1:
-#                 data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
-#         j += 1
-#     print(data_for_plotting[i])
-#     np.save('30EpochC3Experiment-intermediate-values', data_for_plotting)
-#     i += 1
+    j = 0
+    for datatype in [(X_train, y_train), (X_test, y_test)]:
+        dataX = datatype[0]
+        datay = datatype[1]
+        for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
+            ops = opfun(dataX[smpl])
+            tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
+            var = F.nll_loss(ops, tgts).data.numpy() / 10
+            if j == 1:
+                data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
+        j += 1
+    print(data_for_plotting[i])
+    np.save('30EpochC3Experiment-intermediate-values', data_for_plotting)
+    i += 1
 
 
 
@@ -373,9 +375,12 @@ criterion = getattr(model, 'criterion', nn.CrossEntropyLoss)()
 criterion.type(torch.cuda.FloatTensor)
 #model.type(torch.cuda.FloatTensor)
 
-i = 3
+i = 0
 for batch_size in batch_range:
     mydict = {}
+    if i == 0:
+      i+= 1
+      continue
     batchmodel = torch.load("./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
     for key, value in batchmodel.items():
         mydict[key] = value
