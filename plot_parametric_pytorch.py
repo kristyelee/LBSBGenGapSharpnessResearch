@@ -335,9 +335,8 @@ i = 0
 # Fill in test accuracy values
 #for `grid_size' points in the interpolation
 for batch_size in batch_range:
-    if i == 0:
-      i+= 1
-      continue
+    if i == 1:
+      break
     mydict = {}
     batchmodel = torch.load("./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
     for key, value in batchmodel.items():
@@ -378,9 +377,8 @@ criterion.type(torch.cuda.FloatTensor)
 i = 0
 for batch_size in batch_range:
     mydict = {}
-    if i == 0:
-      i+= 1
-      continue
+    if i == 1:
+      break
     batchmodel = torch.load("./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
     for key, value in batchmodel.items():
         mydict[key] = value
