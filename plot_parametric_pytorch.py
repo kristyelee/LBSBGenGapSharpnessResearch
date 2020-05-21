@@ -96,7 +96,7 @@ nb_epochs = 30 #[25, 40, 50]
 batch_range = [25, 40, 50, 64, 80, 128, 256, 512, 625, 1024, 1250, 1750, 2048, 2500, 3125, 4096, 4500, 5000]
 
 # parametric plot (i.e., don't train the network)
-hotstart = False
+hotstart = True
 
 if not hotstart:
     for batch_size in batch_range:
