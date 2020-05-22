@@ -55,12 +55,12 @@ torch.manual_seed(1337)
 from torch.autograd import Variable
 import torch.nn.functional as F
 import keras #This dependency is only for loading the CIFAR-10 data set
-from keras.datasets import cifar10
+from keras.datasets import cifar10, cifar100
 from copy import deepcopy
 import vgg
 
 cudnn.benchmark = True
-(X_train, y_train), (X_test, y_test) = cifar10.load_data()
+(X_train, y_train), (X_test, y_test) = cifar100.load_data()
 X_train = X_train.astype('float32')
 X_train = np.transpose(X_train, axes=(0, 3, 1, 2))
 X_test = X_test.astype('float32')
@@ -92,7 +92,7 @@ x0 = deepcopy(model.state_dict())
 # Number of epochs to train for
 # Choose a large value since LB training needs higher values
 # Changed from 150 to 30
-nb_epochs = 30 #[25, 40, 50]
+nb_epochs = 30 
 batch_range = [25, 40, 50, 64, 80, 128, 256, 512, 625, 1024, 1250, 1750, 2048, 2500, 3125, 4096, 4500, 5000]
 
 # parametric plot (i.e., don't train the network)
@@ -111,7 +111,7 @@ if not hotstart:
             print('Epoch:', e, ' of ', nb_epochs, 'Average loss:', average_loss_over_epoch)
             average_loss_over_epoch = 0
             # Checkpoint the model every epoch
-            torch.save(model.state_dict(), "./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
+            torch.save(model.state_dict(), "./models/30EpochCIFAR100ExperimentBatchSize" + str(batch_size) + ".pth")
             array = np.random.permutation(range(X_train.shape[0]))
             slices = X_train.shape[0] // batch_size
             beginning = 0
@@ -327,16 +327,17 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
 
 
 grid_size = 18 #How many points of interpolation between [0, 5000]
-#data_for_plotting = np.zeros((grid_size, 3)) #3 lines on the graph
+data_for_plotting = np.zeros((grid_size, 3)) #3 lines on the graph
 sharpnesses1eNeg3 = []
 sharpnesses5eNeg4 = []
-data_for_plotting = np.load("30EpochC3Experiment-intermediate-values.npy")
+#data_for_plotting = np.load("30EpochC3Experiment-intermediate-values.npy")
+#data_for_plotting = np.load("30EpochCIFAR100Experiment-intermediate-values.npy")
 i = 0
 # Fill in test accuracy values
 #for `grid_size' points in the interpolation
 for batch_size in batch_range:
     mydict = {}
-    batchmodel = torch.load("./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
+    batchmodel = torch.load("./models/30EpochCIFAR100ExperimentBatchSize" + str(batch_size) + ".pth")
     for key, value in batchmodel.items():
         mydict[key] = value
     model.load_state_dict(mydict)
@@ -353,7 +354,7 @@ for batch_size in batch_range:
                 data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
         j += 1
     print(data_for_plotting[i])
-    np.save('30EpochC3Experiment-intermediate-values', data_for_plotting)
+    np.save('30EpochCIFAR100Experiment-intermediate-values', data_for_plotting)
     i += 1
 
 
@@ -375,7 +376,7 @@ criterion.type(torch.FloatTensor)
 i = 0
 for batch_size in batch_range:
     mydict = {}
-    batchmodel = torch.load("./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
+    batchmodel = torch.load("./models/30EpochCIFAR100ExperimentBatchSize" + str(batch_size) + ".pth")
     for key, value in batchmodel.items():
         mydict[key] = value
     model.load_state_dict(mydict)
@@ -400,7 +401,7 @@ for batch_size in batch_range:
     data_for_plotting[i, 2] += sharpness
     print(sharpness)
     i += 1
-    np.save('30EpochC3Experiment-intermediate-values', data_for_plotting)
+    np.save('30EpochCIFAR100Experiment-intermediate-values', data_for_plotting)
 
 # Actual plotting;
 # if matplotlib is not available, use any tool of your choice by
