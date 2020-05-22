@@ -96,7 +96,7 @@ nb_epochs = 30
 batch_range = [25, 40, 50, 64, 80, 128, 256, 512, 625, 1024, 1250, 1750, 2048, 2500, 3125, 4096, 4500, 5000]
 
 # parametric plot (i.e., don't train the network)
-hotstart = False
+hotstart = True
 
 if not hotstart:
     for batch_size in batch_range:
@@ -384,14 +384,14 @@ for batch_size in batch_range:
     for key, value in batchmodel.items():
         mydict[key] = value
     model.load_state_dict(mydict)
-    model.to(device)
+    #model.to(device)
     val_data = get_dataset("cifar10", 'val', transform['eval'])
 
     val_loader = torch.utils.data.DataLoader(
         val_data,
         batch_size=batch_size, shuffle=False,
         num_workers=8, pin_memory=True) #batch
-    model.to(device)
+    #model.to(device)
     val_result = validate(val_loader, model, criterion, 0)
     val_loss, val_prec1, val_prec5 = [val_result[r]
                                       for r in ['loss', 'prec1', 'prec5']]
