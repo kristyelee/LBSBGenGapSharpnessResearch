@@ -1,5 +1,5 @@
 """
-I used code from the Nitish Shirish Keskar and Wei Wen
+I used code from the Nitish Shirish Keskar and Wei Wen.
 Reproduces the parametric plot experiment from the paper
 for a network like C3.
 
@@ -93,7 +93,7 @@ x0 = deepcopy(model.state_dict())
 # Choose a large value since LB training needs higher values
 # Changed from 150 to 30
 nb_epochs = 30 
-batch_range = [25]
+batch_range = [25, 40, 50, 64, 80, 128, 256, 512, 625, 1024, 1250, 1750, 2048, 2500, 3125, 4096, 4500, 5000]
 
 # parametric plot (i.e., don't train the network)
 hotstart = False
@@ -111,7 +111,7 @@ if not hotstart:
             print('Epoch:', e, ' of ', nb_epochs, 'Average loss:', average_loss_over_epoch)
             average_loss_over_epoch = 0
             # Checkpoint the model every epoch
-            torch.save(model.state_dict(), "./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
+            torch.save(model.state_dict(), "./models/30EpochCIFAR100ExperimentBatchSize" + str(batch_size) + ".pth")
             array = np.random.permutation(range(X_train.shape[0]))
             slices = X_train.shape[0] // batch_size
             beginning = 0
@@ -159,14 +159,14 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
         # measure data loading time
         data_time.update(time.time() - end)
         if 1 is not None:
-            var=1#target = target.cuda(device=device) #comment out if running on CPU
+            target = target.cuda(device=device) #comment out if running on CPU
         input_var = Variable(inputs.type(torch.FloatTensor))
         target_var = Variable(target)
 
         # compute output
         if not training:
             output = model(input_var)
-            loss = criterion(output, target_var)
+            loss = criterion(output, target_var.cpu())
 
             # measure accuracy and record loss
             prec1, prec5 = accuracy(output.data, target_var.data, topk=(1, 5))
@@ -370,41 +370,40 @@ transform = getattr(model, 'input_transform', default_transform)
 
 # define loss function (criterion) and optimizer
 criterion = getattr(model, 'criterion', nn.CrossEntropyLoss)()
-criterion.type(torch.FloatTensor) #criterion.type(torch.cuda.FloatTensor)
+criterion.type(torch.FloatTensor)
 #model.type(torch.cuda.FloatTensor)
 
-# i = 0
-# for batch_size in batch_range:
-#     if i < 15:
-#       i+= 1
-#       continue
-#     mydict = {}
-#     batchmodel = torch.load("./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
-#     for key, value in batchmodel.items():
-#         mydict[key] = value
-#     model.load_state_dict(mydict)
-#     #model.to(device)
-#     val_data = get_dataset("cifar10", 'val', transform['eval'])
+i = 0
+for batch_size in batch_range:
+    if i < 15:
+      i+= 1
+    mydict = {}
+    batchmodel = torch.load("./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
+    for key, value in batchmodel.items():
+        mydict[key] = value
+    model.load_state_dict(mydict)
+    model.to(device)
+    val_data = get_dataset("cifar10", 'val', transform['eval'])
 
-#     val_loader = torch.utils.data.DataLoader(
-#         val_data,
-#         batch_size=batch_size, shuffle=False,
-#         num_workers=8, pin_memory=True) #batch
-#     #model.to(device)
-#     val_result = validate(val_loader, model, criterion, 0)
-#     val_loss, val_prec1, val_prec5 = [val_result[r]
-#                                       for r in ['loss', 'prec1', 'prec5']]
+    val_loader = torch.utils.data.DataLoader(
+        val_data,
+        batch_size=batch_size, shuffle=False,
+        num_workers=8, pin_memory=True) #batch
+    model.to(device)
+    val_result = validate(val_loader, model, criterion, 0)
+    val_loss, val_prec1, val_prec5 = [val_result[r]
+                                      for r in ['loss', 'prec1', 'prec5']]
 
-#     sharpness = get_sharpness(val_loader, model, criterion, 0.001, manifolds=0)
-#     sharpnesses1eNeg3.append(sharpness)
-#     data_for_plotting[i, 1] += sharpness
-#     print(sharpness)
-#     sharpness = get_sharpness(val_loader, model, criterion, 0.0005, manifolds=0)
-#     sharpnesses5eNeg4.append(sharpness)
-#     data_for_plotting[i, 2] += sharpness
-#     print(sharpness)
-#     i += 1
-#     np.save('30EpochC3Experiment-intermediate-values', data_for_plotting)
+    sharpness = get_sharpness(val_loader, model, criterion, 0.001, manifolds=0)
+    sharpnesses1eNeg3.append(sharpness)
+    data_for_plotting[i, 1] += sharpness
+    print(sharpness)
+    sharpness = get_sharpness(val_loader, model, criterion, 0.0005, manifolds=0)
+    sharpnesses5eNeg4.append(sharpness)
+    data_for_plotting[i, 2] += sharpness
+    print(sharpness)
+    i += 1
+    np.save('30EpochCIFAR100Experiment-intermediate-values', data_for_plotting)
 
 # Actual plotting;
 # if matplotlib is not available, use any tool of your choice by
