@@ -159,7 +159,7 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
         # measure data loading time
         data_time.update(time.time() - end)
         if 1 is not None:
-            target = target.cuda(device=device) #comment out if running on CPU
+            var=1#target = target.cuda(device=device) #comment out if running on CPU
         input_var = Variable(inputs.type(torch.FloatTensor))
         target_var = Variable(target)
 
@@ -332,6 +332,7 @@ sharpnesses1eNeg3 = []
 sharpnesses5eNeg4 = []
 data_for_plotting = np.load("30EpochC3Experiment-intermediate-values.npy")
 #data_for_plotting = np.load("30EpochCIFAR100Experiment-intermediate-values.npy")
+print(data_for_plotting)
 i = 0
 # Fill in test accuracy values
 #for `grid_size' points in the interpolation
@@ -354,7 +355,7 @@ i = 0
 #                 data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
 #         j += 1
 #     print(data_for_plotting[i])
-#     np.save('30EpochCIFAR100Experiment-intermediate-values', data_for_plotting)
+#     np.save('30EpochC3Experiment-intermediate-values', data_for_plotting)
 #     i += 1
 
 
@@ -370,13 +371,14 @@ transform = getattr(model, 'input_transform', default_transform)
 
 # define loss function (criterion) and optimizer
 criterion = getattr(model, 'criterion', nn.CrossEntropyLoss)()
-criterion.type(torch.FloatTensor)
+criterion.type(torch.FloatTensor) #criterion.type(torch.cuda.FloatTensor)
 #model.type(torch.cuda.FloatTensor)
 
 i = 0
 for batch_size in batch_range:
     if i < 15:
       i+= 1
+      continue
     mydict = {}
     batchmodel = torch.load("./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
     for key, value in batchmodel.items():
@@ -403,7 +405,7 @@ for batch_size in batch_range:
     data_for_plotting[i, 2] += sharpness
     print(sharpness)
     i += 1
-    np.save('30EpochCIFAR100Experiment-intermediate-values', data_for_plotting)
+    np.save('30EpochC3Experiment-intermediate-values', data_for_plotting)
 
 # Actual plotting;
 # if matplotlib is not available, use any tool of your choice by
