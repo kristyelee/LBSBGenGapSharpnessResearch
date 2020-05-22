@@ -1,3 +1,9 @@
 # LBSBGenGapSharpnessResearch
 
-##Dependencies##
+# Dependencies 
+- Keras
+- Numpy
+- Matplotlib
+- Pytorch
+- Bokeh
+
