@@ -232,7 +232,7 @@ def validate(data_loader, model, criterion, epoch):
 def get_minus_cross_entropy(x, data_loader, model, criterion, training=False):
   if type(x).__module__ == np.__name__:
     x = torch.from_numpy(x).float()
-    #x = x.cuda()
+    x = x.cuda()
   # switch to evaluate mode
   model.eval()
 
@@ -310,7 +310,7 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
 
   # recover the model
   x0 = torch.from_numpy(x0).float()
-  #x0 = x0.cuda()
+  x0 = x0.cuda()
   x_start = 0
   for p in model.parameters():
       psize = p.data.size()
@@ -371,7 +371,7 @@ transform = getattr(model, 'input_transform', default_transform)
 
 # define loss function (criterion) and optimizer
 criterion = getattr(model, 'criterion', nn.CrossEntropyLoss)()
-criterion.type(torch.cuda.FloatTensor)
+criterion.type(torch.FloatTensor)
 #model.type(torch.cuda.FloatTensor)
 
 i = 0
@@ -384,14 +384,14 @@ for batch_size in batch_range:
     for key, value in batchmodel.items():
         mydict[key] = value
     model.load_state_dict(mydict)
-    #model.to(device)
+    model.to(device)
     val_data = get_dataset("cifar10", 'val', transform['eval'])
 
     val_loader = torch.utils.data.DataLoader(
         val_data,
         batch_size=batch_size, shuffle=False,
         num_workers=8, pin_memory=True) #batch
-    #model.to(device)
+    model.to(device)
     val_result = validate(val_loader, model, criterion, 0)
     val_loss, val_prec1, val_prec5 = [val_result[r]
                                       for r in ['loss', 'prec1', 'prec5']]
