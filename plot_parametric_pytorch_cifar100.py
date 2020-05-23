@@ -58,7 +58,7 @@ import torch.nn.functional as F
 import keras #This dependency is only for loading the CIFAR-10 data set
 from keras.datasets import cifar10, cifar100
 from copy import deepcopy
-import vgg
+import vgg100
 
 cudnn.benchmark = True
 (X_train, y_train), (X_test, y_test) = cifar100.load_data()
@@ -70,11 +70,8 @@ X_train /= 255
 X_test /= 255
 device = torch.device('cuda:0')
 
-# This is where you can load any model of your choice.
-# I stole PyTorch Vision's VGG network and modified it to work on CIFAR-10.
-# You can take this line out and add any other network and the code
-# should run just fine.
-model = vgg.vgg11_bn()
+#Load the model of any choice
+model = vgg100.vgg11_bn()
 #model.to(device)
 
 
@@ -327,82 +324,82 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
 ############################
 
 
-grid_size = 18 #How many points of interpolation between [0, 5000]
-data_for_plotting = np.zeros((grid_size, 3)) #3 lines on the graph
-sharpnesses1eNeg3 = []
-sharpnesses5eNeg4 = []
-#data_for_plotting = np.load("30EpochC3Experiment-intermediate-values.npy")
-#data_for_plotting = np.load("30EpochCIFAR100Experiment-intermediate-values.npy")
-i = 0
-# Fill in test accuracy values
-#for `grid_size' points in the interpolation
-for batch_size in batch_range:
-    mydict = {}
-    batchmodel = torch.load("./models/30EpochCIFAR100ExperimentBatchSize" + str(batch_size) + ".pth")
-    for key, value in batchmodel.items():
-        mydict[key] = value
-    model.load_state_dict(mydict)
+# grid_size = 18 #How many points of interpolation between [0, 5000]
+# data_for_plotting = np.zeros((grid_size, 3)) #3 lines on the graph
+# sharpnesses1eNeg3 = []
+# sharpnesses5eNeg4 = []
+# #data_for_plotting = np.load("30EpochC3Experiment-intermediate-values.npy")
+# #data_for_plotting = np.load("30EpochCIFAR100Experiment-intermediate-values.npy")
+# i = 0
+# # Fill in test accuracy values
+# #for `grid_size' points in the interpolation
+# for batch_size in batch_range:
+#     mydict = {}
+#     batchmodel = torch.load("./models/30EpochCIFAR100ExperimentBatchSize" + str(batch_size) + ".pth")
+#     for key, value in batchmodel.items():
+#         mydict[key] = value
+#     model.load_state_dict(mydict)
     
-    j = 0
-    for datatype in [(X_train, y_train), (X_test, y_test)]:
-        dataX = datatype[0]
-        datay = datatype[1]
-        for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
-            ops = opfun(dataX[smpl])
-            tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
-            var = F.nll_loss(ops, tgts).data.numpy() / 10
-            if j == 1:
-                data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
-        j += 1
-    print(data_for_plotting[i])
-    np.save('30EpochCIFAR100Experiment-intermediate-values', data_for_plotting)
-    i += 1
+#     j = 0
+#     for datatype in [(X_train, y_train), (X_test, y_test)]:
+#         dataX = datatype[0]
+#         datay = datatype[1]
+#         for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
+#             ops = opfun(dataX[smpl])
+#             tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
+#             var = F.nll_loss(ops, tgts).data.numpy() / 10
+#             if j == 1:
+#                 data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
+#         j += 1
+#     print(data_for_plotting[i])
+#     np.save('30EpochCIFAR100Experiment-intermediate-values', data_for_plotting)
+#     i += 1
 
 
 
-# Data loading code
-default_transform = {
-    'train': get_transform("cifar10",
-                           input_size=None, augment=True),
-    'eval': get_transform("cifar10",
-                          input_size=None, augment=False)
-}
-transform = getattr(model, 'input_transform', default_transform)
+# # Data loading code
+# default_transform = {
+#     'train': get_transform("cifar10",
+#                            input_size=None, augment=True),
+#     'eval': get_transform("cifar10",
+#                           input_size=None, augment=False)
+# }
+# transform = getattr(model, 'input_transform', default_transform)
 
-# define loss function (criterion) and optimizer
-criterion = getattr(model, 'criterion', nn.CrossEntropyLoss)()
-criterion.type(torch.FloatTensor)
-#model.type(torch.cuda.FloatTensor)
+# # define loss function (criterion) and optimizer
+# criterion = getattr(model, 'criterion', nn.CrossEntropyLoss)()
+# criterion.type(torch.FloatTensor)
+# #model.type(torch.cuda.FloatTensor)
 
-i = 0
-for batch_size in batch_range:
-    mydict = {}
-    batchmodel = torch.load("./models/30EpochCIFAR100ExperimentBatchSize" + str(batch_size) + ".pth")
-    for key, value in batchmodel.items():
-        mydict[key] = value
-    model.load_state_dict(mydict)
-    model.to(device)
-    val_data = get_dataset("cifar100", 'val', transform['eval'])
+# i = 0
+# for batch_size in batch_range:
+#     mydict = {}
+#     batchmodel = torch.load("./models/30EpochCIFAR100ExperimentBatchSize" + str(batch_size) + ".pth")
+#     for key, value in batchmodel.items():
+#         mydict[key] = value
+#     model.load_state_dict(mydict)
+#     model.to(device)
+#     val_data = get_dataset("cifar100", 'val', transform['eval'])
 
-    val_loader = torch.utils.data.DataLoader(
-        val_data,
-        batch_size=batch_size, shuffle=False,
-        num_workers=8, pin_memory=True) #batch
-    model.to(device)
-    val_result = validate(val_loader, model, criterion, 0)
-    val_loss, val_prec1, val_prec5 = [val_result[r]
-                                      for r in ['loss', 'prec1', 'prec5']]
+#     val_loader = torch.utils.data.DataLoader(
+#         val_data,
+#         batch_size=batch_size, shuffle=False,
+#         num_workers=8, pin_memory=True) #batch
+#     model.to(device)
+#     val_result = validate(val_loader, model, criterion, 0)
+#     val_loss, val_prec1, val_prec5 = [val_result[r]
+#                                       for r in ['loss', 'prec1', 'prec5']]
 
-    sharpness = get_sharpness(val_loader, model, criterion, 0.001, manifolds=0)
-    sharpnesses1eNeg3.append(sharpness)
-    data_for_plotting[i, 1] += sharpness
-    print(sharpness)
-    sharpness = get_sharpness(val_loader, model, criterion, 0.0005, manifolds=0)
-    sharpnesses5eNeg4.append(sharpness)
-    data_for_plotting[i, 2] += sharpness
-    print(sharpness)
-    i += 1
-    np.save('30EpochCIFAR100Experiment-intermediate-values', data_for_plotting)
+#     sharpness = get_sharpness(val_loader, model, criterion, 0.001, manifolds=0)
+#     sharpnesses1eNeg3.append(sharpness)
+#     data_for_plotting[i, 1] += sharpness
+#     print(sharpness)
+#     sharpness = get_sharpness(val_loader, model, criterion, 0.0005, manifolds=0)
+#     sharpnesses5eNeg4.append(sharpness)
+#     data_for_plotting[i, 2] += sharpness
+#     print(sharpness)
+#     i += 1
+#     np.save('30EpochCIFAR100Experiment-intermediate-values', data_for_plotting)
 
 # Actual plotting;
 # if matplotlib is not available, use any tool of your choice by
