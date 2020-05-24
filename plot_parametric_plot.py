@@ -50,10 +50,8 @@ else:
                      Please choose one of C1, C2, C3 or C4.
                      Refer to the paper for details regarding these networks''')
 
-X_train = np.transpose(X_train, axes=(0, 3, 1, 2))
-# print(X_train.shape)
+X_train = X_train.astype('float32')
 X_test = X_test.astype('float32')
-X_test = np.transpose(X_train, axes=(0, 3, 1, 2))
 X_train /= 255
 X_test /= 255
 
