@@ -47,11 +47,11 @@ def shallownet(nb_classes):
 	model.add(Dense(384))
 	model.add(BatchNormalization())
 	model.add(Activation('relu'))
-	model.add(Dropout(0.5))
+	model.add(Dropout(0.5, data_format='channels_first'))
 	model.add(Dense(192))
 	model.add(BatchNormalization())
 	model.add(Activation('relu'))
-	model.add(Dropout(0.5))
+	model.add(Dropout(0.5, data_format='channels_first'))
 	model.add(Dense(nb_classes, activation='softmax'))
 	return model
 
