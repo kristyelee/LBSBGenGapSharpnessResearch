@@ -336,27 +336,27 @@ print(data_for_plotting)
 i = 0
 # Fill in test accuracy values
 #for `grid_size' points in the interpolation
-for batch_size in batch_range:
-    mydict = {}
-    batchmodel = torch.load("./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
-    for key, value in batchmodel.items():
-        mydict[key] = value
-    model.load_state_dict(mydict)
+# for batch_size in batch_range:
+#     mydict = {}
+#     batchmodel = torch.load("./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
+#     for key, value in batchmodel.items():
+#         mydict[key] = value
+#     model.load_state_dict(mydict)
     
-    j = 0
-    for datatype in [(X_train, y_train), (X_test, y_test)]:
-        dataX = datatype[0]
-        datay = datatype[1]
-        for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
-            ops = opfun(dataX[smpl])
-            tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
-            var = F.nll_loss(ops, tgts).data.numpy() / 10
-            if j == 1:
-                data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
-        j += 1
-    print(data_for_plotting[i])
-    np.save('30EpochC3Experiment-intermediate-values', data_for_plotting)
-    i += 1
+#     j = 0
+#     for datatype in [(X_train, y_train), (X_test, y_test)]:
+#         dataX = datatype[0]
+#         datay = datatype[1]
+#         for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
+#             ops = opfun(dataX[smpl])
+#             tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
+#             var = F.nll_loss(ops, tgts).data.numpy() / 10
+#             if j == 1:
+#                 data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
+#         j += 1
+#     print(data_for_plotting[i])
+#     np.save('30EpochC3Experiment-intermediate-values', data_for_plotting)
+#     i += 1
 
 
 
