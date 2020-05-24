@@ -33,12 +33,12 @@ def kerasnet(nb_classes):
 def shallownet(nb_classes):
 	global img_size
 	model = Sequential()
-	model.add(Conv2D(64, (5, 5), input_shape=img_size))
+	model.add(Conv2D(64, (5, 5), input_shape=img_size, data_format='channels_first'))
 	model.add(BatchNormalization(axis=1))
 	model.add(Activation('relu'))
 	model.add(MaxPooling2D(pool_size=(3,3), strides=(2,2), padding='same'))
 
-	model.add(Conv2D(64, (5, 5), padding='same'))
+	model.add(Conv2D(64, (5, 5), padding='same', data_format='channels_first'))
 	model.add(BatchNormalization(axis=1))
 	model.add(Activation('relu'))
 	model.add(MaxPooling2D(pool_size=(3,3), strides=(2,2), padding='same'))
