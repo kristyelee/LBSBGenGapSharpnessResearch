@@ -310,7 +310,7 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
 
   # recover the model
   x0 = torch.from_numpy(x0).float()
-  x0 = x0.cuda()
+  #x0 = x0.cuda()
   x_start = 0
   for p in model.parameters():
       psize = p.data.size()
@@ -391,7 +391,7 @@ for batch_size in batch_range:
         val_data,
         batch_size=batch_size, shuffle=False,
         num_workers=8, pin_memory=True) #batch
-    model.to(device)
+    #model.to(device)
     val_result = validate(val_loader, model, criterion, 0)
     val_loss, val_prec1, val_prec5 = [val_result[r]
                                       for r in ['loss', 'prec1', 'prec5']]
