@@ -1,5 +1,6 @@
 """
-I used code from the Nitish Shirish Keskar and Wei Wen.
+I used code from Nitish Shirish Keskar and Wei Wen.
+
 Reproduces the parametric plot experiment from the paper
 for a network like C3.
 
@@ -147,7 +148,6 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
     losses = AverageMeter()
     top1 = AverageMeter()
     top5 = AverageMeter()
-
     end = time.time()
     grad_vec = None
     if training:
@@ -310,7 +310,7 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
 
   # recover the model
   x0 = torch.from_numpy(x0).float()
-  #x0 = x0.cuda()
+  x0 = x0.cuda()
   x_start = 0
   for p in model.parameters():
       psize = p.data.size()
@@ -336,27 +336,27 @@ print(data_for_plotting)
 i = 0
 # Fill in test accuracy values
 #for `grid_size' points in the interpolation
-# for batch_size in batch_range:
-#     mydict = {}
-#     batchmodel = torch.load("./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
-#     for key, value in batchmodel.items():
-#         mydict[key] = value
-#     model.load_state_dict(mydict)
+for batch_size in batch_range:
+    mydict = {}
+    batchmodel = torch.load("./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
+    for key, value in batchmodel.items():
+        mydict[key] = value
+    model.load_state_dict(mydict)
     
-#     j = 0
-#     for datatype in [(X_train, y_train), (X_test, y_test)]:
-#         dataX = datatype[0]
-#         datay = datatype[1]
-#         for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
-#             ops = opfun(dataX[smpl])
-#             tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
-#             var = F.nll_loss(ops, tgts).data.numpy() / 10
-#             if j == 1:
-#                 data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
-#         j += 1
-#     print(data_for_plotting[i])
-#     np.save('30EpochC3Experiment-intermediate-values', data_for_plotting)
-#     i += 1
+    j = 0
+    for datatype in [(X_train, y_train), (X_test, y_test)]:
+        dataX = datatype[0]
+        datay = datatype[1]
+        for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
+            ops = opfun(dataX[smpl])
+            tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
+            var = F.nll_loss(ops, tgts).data.numpy() / 10
+            if j == 1:
+                data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
+        j += 1
+    print(data_for_plotting[i])
+    np.save('30EpochC3Experiment-intermediate-values', data_for_plotting)
+    i += 1
 
 
 
@@ -371,12 +371,12 @@ transform = getattr(model, 'input_transform', default_transform)
 
 # define loss function (criterion) and optimizer
 criterion = getattr(model, 'criterion', nn.CrossEntropyLoss)()
-criterion.type(torch.FloatTensor) #criterion.type(torch.cuda.FloatTensor)
+criterion.type(torch.cuda.FloatTensor) #criterion.type(torch.cuda.FloatTensor)
 #model.type(torch.cuda.FloatTensor)
 
 i = 0
 for batch_size in batch_range:
-    if i < 15:
+    if i < 16:
       i+= 1
       continue
     mydict = {}
@@ -391,7 +391,7 @@ for batch_size in batch_range:
         val_data,
         batch_size=batch_size, shuffle=False,
         num_workers=8, pin_memory=True) #batch
-    #model.to(device)
+    model.to(device)
     val_result = validate(val_loader, model, criterion, 0)
     val_loss, val_prec1, val_prec5 = [val_result[r]
                                       for r in ['loss', 'prec1', 'prec5']]
@@ -400,6 +400,7 @@ for batch_size in batch_range:
     sharpnesses1eNeg3.append(sharpness)
     data_for_plotting[i, 1] += sharpness
     print(sharpness)
+    np.save('30EpochC3Experiment-intermediate-values', data_for_plotting)
     sharpness = get_sharpness(val_loader, model, criterion, 0.0005, manifolds=0)
     sharpnesses5eNeg4.append(sharpness)
     data_for_plotting[i, 2] += sharpness
