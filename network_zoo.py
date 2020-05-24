@@ -36,22 +36,22 @@ def shallownet(nb_classes):
 	model.add(Conv2D(64, (5, 5), input_shape=img_size, data_format='channels_first'))
 	model.add(BatchNormalization(axis=1))
 	model.add(Activation('relu'))
-	model.add(MaxPooling2D(pool_size=(3,3), strides=(2,2), padding='same'))
+	model.add(MaxPooling2D(pool_size=(3,3), strides=(2,2), padding='same', data_format='channels_first'))
 
 	model.add(Conv2D(64, (5, 5), padding='same', data_format='channels_first'))
 	model.add(BatchNormalization(axis=1))
 	model.add(Activation('relu'))
-	model.add(MaxPooling2D(pool_size=(3,3), strides=(2,2), padding='same'))
+	model.add(MaxPooling2D(pool_size=(3,3), strides=(2,2), padding='same', data_format='channels_first'))
 
 	model.add(Flatten())
 	model.add(Dense(384))
 	model.add(BatchNormalization())
 	model.add(Activation('relu'))
-	model.add(Dropout(0.5, data_format='channels_first'))
+	model.add(Dropout(0.5))
 	model.add(Dense(192))
 	model.add(BatchNormalization())
 	model.add(Activation('relu'))
-	model.add(Dropout(0.5, data_format='channels_first'))
+	model.add(Dropout(0.5))
 	model.add(Dense(nb_classes, activation='softmax'))
 	return model
 
