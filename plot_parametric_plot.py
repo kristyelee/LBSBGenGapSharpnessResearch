@@ -54,6 +54,8 @@ X_train = X_train.astype('float32')
 X_test = X_test.astype('float32')
 X_train /= 255
 X_test /= 255
+X_train = np.transpose(X_train, axes=(0, 3, 1, 2))
+X_test = np.transpose(X_test, axes=(0, 3, 1, 2))
 
 # convert class vectors to binary class matrices
 Y_train = np_utils.to_categorical(y_train, nb_classes)
