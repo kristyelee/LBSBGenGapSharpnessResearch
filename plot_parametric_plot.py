@@ -97,8 +97,8 @@ lb_solution = [p.numpy for p in model.trainable_weights]
 
 # parametric plot data collection
 # we discretize the interval [-1,2] into 25 pieces
-alpha_range = numpy.linspace(-1, 2, 25)
-data_for_plotting = numpy.zeros((25, 4))
+alpha_range = np.linspace(-1, 2, 25)
+data_for_plotting = np.zeros((25, 4))
 
 i = 0
 for alpha in alpha_range:
@@ -111,6 +111,8 @@ for alpha in alpha_range:
                                          batch_size=5000, verbose=0)
     data_for_plotting[i, :] = [train_xent, train_acc, test_xent, test_acc]
     i += 1
+
+np.save('pltplt-intermediate-values', data_for_plotting)
 
 # finally, let's plot the data
 # we plot the XENT loss on the left Y-axis
