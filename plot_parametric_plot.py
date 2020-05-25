@@ -79,7 +79,7 @@ model.fit(X_train, Y_train,
           nb_epoch=nb_epoch,
           validation_data=(X_test, Y_test),
           shuffle=True)
-sb_solution = [p.numpy for p in model.trainable_weights]
+sb_solution = [tf.keras.backend.get_value(p) for p in model.trainable_weights]
 
 # re-compiling to reset the optimizer accumulators
 model.compile(loss='categorical_crossentropy',
@@ -93,7 +93,7 @@ model.fit(X_train, Y_train,
           batch_size=5000,
           nb_epoch=nb_epoch,
           validation_data=(X_test, Y_test))
-lb_solution = [p.numpy for p in model.trainable_weights]
+lb_solution = [tf.keras.backend.get_value(p) for p in model.trainable_weights]
 
 # parametric plot data collection
 # we discretize the interval [-1,2] into 25 pieces
@@ -103,8 +103,8 @@ data_for_plotting = np.zeros((25, 4))
 i = 0
 for alpha in alpha_range:
     for p in range(len(sb_solution)):
-        model.trainable_weights[p].numpy = lb_solution[p]*alpha +
-                                             sb_solution[p]*(1-alpha)
+        tf.keras.backend.set_value(model.trainable_weights[p],lb_solution[p]*alpha +
+                                             sb_solution[p]*(1-alpha))
     train_xent, train_acc = model.evaluate(X_train, Y_train,
                                            batch_size=5000, verbose=0)
     test_xent, test_acc = model.evaluate(X_test, Y_test,
