@@ -24,6 +24,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 import network_zoo
+import tensorflow as tf
 
 parser = argparse.ArgumentParser(description=
                 '''This code first trains the user-specific network (C[1-4])
