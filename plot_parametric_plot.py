@@ -79,7 +79,7 @@ model.fit(X_train, Y_train,
           nb_epoch=nb_epoch,
           validation_data=(X_test, Y_test),
           shuffle=True)
-sb_solution = [p.get_value() for p in model.trainable_weights]
+sb_solution = [p.numpy for p in model.trainable_weights]
 
 # re-compiling to reset the optimizer accumulators
 model.compile(loss='categorical_crossentropy',
@@ -93,7 +93,7 @@ model.fit(X_train, Y_train,
           batch_size=5000,
           nb_epoch=nb_epoch,
           validation_data=(X_test, Y_test))
-lb_solution = [p.get_value() for p in model.trainable_weights]
+lb_solution = [p.numpy for p in model.trainable_weights]
 
 # parametric plot data collection
 # we discretize the interval [-1,2] into 25 pieces
