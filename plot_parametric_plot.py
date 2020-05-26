@@ -104,8 +104,7 @@ data_for_plotting = np.zeros((25, 4))
 i = 0
 for alpha in alpha_range:
     for p in range(len(sb_solution)):
-        tf.keras.backend.set_value(model.trainable_weights[p],lb_solution[p]*alpha +
-                                             sb_solution[p]*(1-alpha))
+        tf.keras.backend.set_value(model.trainable_weights[p],lb_solution[p]*alpha + sb_solution[p]*(1-alpha))
     train_xent, train_acc = model.evaluate(X_train, Y_train,
                                            batch_size=5000, verbose=0)
     test_xent, test_acc = model.evaluate(X_test, Y_test,
