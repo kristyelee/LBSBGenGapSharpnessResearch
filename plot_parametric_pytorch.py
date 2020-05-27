@@ -158,7 +158,7 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
         data_time.update(time.time() - end)
         if 1 is not None:
             target = target.cuda(device=device) #comment out if running on CPU
-        input_var = Variable(inputs.type(torch.FloatTensor))
+        input_var = Variable(inputs.type(torch.cuda.FloatTensor))
         target_var = Variable(target)
 
         # compute output
@@ -325,35 +325,35 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
 
 
 grid_size = 18 #How many points of interpolation between [0, 5000]
-data_for_plotting = np.zeros((grid_size, 3)) #3 lines on the graph
+#data_for_plotting = np.zeros((grid_size, 3)) #3 lines on the graph
 sharpnesses1eNeg3 = []
 sharpnesses5eNeg4 = []
-#data_for_plotting = np.load("ShallowNetCIFAR10-intermediate-values.npy")
+data_for_plotting = np.load("ShallowNetCIFAR10-intermediate-values.npy")
 print(data_for_plotting)
 i = 4
 # Fill in test accuracy values
 #for `grid_size' points in the interpolation
-for batch_size in batch_range:
-    mydict = {}
-    batchmodel = torch.load("./models/ShallowNetCIFAR10BatchSize" + str(batch_size) + ".pth")
-    for key, value in batchmodel.items():
-        mydict[key] = value
-    model.load_state_dict(mydict)
+# for batch_size in batch_range:
+#     mydict = {}
+#     batchmodel = torch.load("./models/ShallowNetCIFAR10BatchSize" + str(batch_size) + ".pth")
+#     for key, value in batchmodel.items():
+#         mydict[key] = value
+#     model.load_state_dict(mydict)
     
-    j = 0
-    for datatype in [(X_train, y_train), (X_test, y_test)]:
-        dataX = datatype[0]
-        datay = datatype[1]
-        for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
-            ops = opfun(dataX[smpl])
-            tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
-            var = F.nll_loss(ops, tgts).data.numpy() / 10
-            if j == 1:
-                data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
-        j += 1
-    print(data_for_plotting[i])
-    np.save('ShallowNetCIFAR10-intermediate-values', data_for_plotting)
-    i += 1
+#     j = 0
+#     for datatype in [(X_train, y_train), (X_test, y_test)]:
+#         dataX = datatype[0]
+#         datay = datatype[1]
+#         for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
+#             ops = opfun(dataX[smpl])
+#             tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
+#             var = F.nll_loss(ops, tgts).data.numpy() / 10
+#             if j == 1:
+#                 data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
+#         j += 1
+#     print(data_for_plotting[i])
+#     np.save('ShallowNetCIFAR10-intermediate-values', data_for_plotting)
+#     i += 1
 
 
 
