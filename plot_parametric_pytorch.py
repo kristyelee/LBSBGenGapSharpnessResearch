@@ -2,25 +2,23 @@
 I used code from Nitish Shirish Keskar and Wei Wen.
 
 Reproduces the parametric plot experiment from the paper
-for a network like C3.
+for C1. 
 
 Plots a parametric plot between SB and LB
 minimizers demonstrating the relative sharpness
-of the two minima.
+of the two minima; measures testing accuracy and sharpness across different batch sizes.
 
 Requirements:
 - Keras (only for CIFAR-10 dataset; easy to avoid)
 - Matplotlib
 - Numpy
+- Bokeh
+- PyTorch
 
-TODO:
-- Enable the code to run on CUDA as well.
-  (As of now, it only runs on CPU)
 
 Run Command:
-        python plot_parametric_pytorch.py
+        python3 plot_parametric_pytorch.py
 
-The plot is saved as C3ish.pdf
 """
 
 import pdb
@@ -59,6 +57,7 @@ import keras #This dependency is only for loading the CIFAR-10 data set
 from keras.datasets import cifar10, cifar100
 from copy import deepcopy
 import vgg
+import cifar_shallow
 
 cudnn.benchmark = True
 (X_train, y_train), (X_test, y_test) = cifar10.load_data()
@@ -74,9 +73,8 @@ device = torch.device('cuda:0')
 # I stole PyTorch Vision's VGG network and modified it to work on CIFAR-10.
 # You can take this line out and add any other network and the code
 # should run just fine.
-model = vgg.vgg11_bn()
+model = cifar_shallow.cifar10_shallow()
 #model.to(device)
-
 
 # Forward pass
 opfun = lambda X: model.forward(Variable(torch.from_numpy(X)))
@@ -97,7 +95,7 @@ nb_epochs = 30
 batch_range = [25, 40, 50, 64, 80, 128, 256, 512, 625, 1024, 1250, 1750, 2048, 2500, 3125, 4096, 4500, 5000]
 
 # parametric plot (i.e., don't train the network)
-hotstart = True
+hotstart = False
 
 if not hotstart:
     for batch_size in batch_range:
@@ -112,7 +110,7 @@ if not hotstart:
             print('Epoch:', e, ' of ', nb_epochs, 'Average loss:', average_loss_over_epoch)
             average_loss_over_epoch = 0
             # Checkpoint the model every epoch
-            torch.save(model.state_dict(), "./models/30EpochCIFAR100ExperimentBatchSize" + str(batch_size) + ".pth")
+            torch.save(model.state_dict(), "./models/ShallowNetCIFAR10BatchSize" + str(batch_size) + ".pth")
             array = np.random.permutation(range(X_train.shape[0]))
             slices = X_train.shape[0] // batch_size
             beginning = 0
@@ -327,36 +325,35 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
 
 
 grid_size = 18 #How many points of interpolation between [0, 5000]
-#data_for_plotting = np.zeros((grid_size, 3)) #3 lines on the graph
+data_for_plotting = np.zeros((grid_size, 3)) #3 lines on the graph
 sharpnesses1eNeg3 = []
 sharpnesses5eNeg4 = []
-data_for_plotting = np.load("30EpochC3Experiment-intermediate-values.npy")
-#data_for_plotting = np.load("30EpochCIFAR100Experiment-intermediate-values.npy")
+#data_for_plotting = np.load("ShallowNetCIFAR10-intermediate-values.npy")
 print(data_for_plotting)
 i = 0
 # Fill in test accuracy values
 #for `grid_size' points in the interpolation
-# for batch_size in batch_range:
-#     mydict = {}
-#     batchmodel = torch.load("./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
-#     for key, value in batchmodel.items():
-#         mydict[key] = value
-#     model.load_state_dict(mydict)
+for batch_size in batch_range:
+    mydict = {}
+    batchmodel = torch.load("./models/ShallowNetCIFAR10BatchSize" + str(batch_size) + ".pth")
+    for key, value in batchmodel.items():
+        mydict[key] = value
+    model.load_state_dict(mydict)
     
-#     j = 0
-#     for datatype in [(X_train, y_train), (X_test, y_test)]:
-#         dataX = datatype[0]
-#         datay = datatype[1]
-#         for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
-#             ops = opfun(dataX[smpl])
-#             tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
-#             var = F.nll_loss(ops, tgts).data.numpy() / 10
-#             if j == 1:
-#                 data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
-#         j += 1
-#     print(data_for_plotting[i])
-#     np.save('30EpochC3Experiment-intermediate-values', data_for_plotting)
-#     i += 1
+    j = 0
+    for datatype in [(X_train, y_train), (X_test, y_test)]:
+        dataX = datatype[0]
+        datay = datatype[1]
+        for smpl in np.split(np.random.permutation(range(dataX.shape[0])), 10):
+            ops = opfun(dataX[smpl])
+            tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
+            var = F.nll_loss(ops, tgts).data.numpy() / 10
+            if j == 1:
+                data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
+        j += 1
+    print(data_for_plotting[i])
+    np.save('ShallowNetCIFAR10-intermediate-values', data_for_plotting)
+    i += 1
 
 
 
@@ -376,22 +373,19 @@ criterion.type(torch.cuda.FloatTensor) #criterion.type(torch.cuda.FloatTensor)
 
 i = 0
 for batch_size in batch_range:
-    if i < 16:
-      i+= 1
-      continue
     mydict = {}
-    batchmodel = torch.load("./models/30EpochC3ExperimentBatchSize" + str(batch_size) + ".pth")
+    batchmodel = torch.load("./models/ShallowNetCIFAR10BatchSize" + str(batch_size) + ".pth")
     for key, value in batchmodel.items():
         mydict[key] = value
     model.load_state_dict(mydict)
-    #model.to(device)
+    model.to(device)
     val_data = get_dataset("cifar10", 'val', transform['eval'])
 
     val_loader = torch.utils.data.DataLoader(
         val_data,
         batch_size=batch_size, shuffle=False,
         num_workers=8, pin_memory=True) #batch
-    #model.to(device)
+    model.to(device)
     val_result = validate(val_loader, model, criterion, 0)
     val_loss, val_prec1, val_prec5 = [val_result[r]
                                       for r in ['loss', 'prec1', 'prec5']]
@@ -400,13 +394,13 @@ for batch_size in batch_range:
     sharpnesses1eNeg3.append(sharpness)
     data_for_plotting[i, 1] += sharpness
     print(sharpness)
-    np.save('30EpochC3Experiment-intermediate-values', data_for_plotting)
+    np.save('ShallowNetCIFAR10-intermediate-values', data_for_plotting)
     sharpness = get_sharpness(val_loader, model, criterion, 0.0005, manifolds=0)
     sharpnesses5eNeg4.append(sharpness)
     data_for_plotting[i, 2] += sharpness
     print(sharpness)
     i += 1
-    np.save('30EpochC3Experiment-intermediate-values', data_for_plotting)
+    np.save('ShallowNetCIFAR10-intermediate-values', data_for_plotting)
 
 # Actual plotting;
 # if matplotlib is not available, use any tool of your choice by
@@ -425,5 +419,5 @@ ax2.set_ylabel('Sharpness', color='r')
 ax2.legend(('1e-3', '5e-4'), loc=0)
 
 ax1.grid(b=True, which='both')
-plt.savefig('BatchSizeVSTestAccuracySharpnessPlot.pdf')
+plt.savefig('CIFAR10BatchSizeVSTestAccuracySharpnessPlot.pdf')
 print('Saved figure; Task complete')
