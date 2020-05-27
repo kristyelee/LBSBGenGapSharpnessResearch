@@ -91,11 +91,11 @@ x0 = deepcopy(model.state_dict())
 # Number of epochs to train for
 # Choose a large value since LB training needs higher values
 # Changed from 150 to 30
-nb_epochs = 30 
-batch_range = [25, 40, 50, 64, 80, 128, 256, 512, 625, 1024, 1250, 1750, 2048, 2500, 3125, 4096, 4500, 5000]
+nb_epochs = 30 #25, 40, 50, 64
+batch_range = [80, 128, 256, 512, 625, 1024, 1250, 1750, 2048, 2500, 3125, 4096, 4500, 5000]
 
 # parametric plot (i.e., don't train the network)
-hotstart = False
+hotstart = True
 
 if not hotstart:
     for batch_size in batch_range:
@@ -157,7 +157,7 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
         # measure data loading time
         data_time.update(time.time() - end)
         if 1 is not None:
-            var=1#target = target.cuda(device=device) #comment out if running on CPU
+            target = target.cuda(device=device) #comment out if running on CPU
         input_var = Variable(inputs.type(torch.FloatTensor))
         target_var = Variable(target)
 
@@ -230,7 +230,7 @@ def validate(data_loader, model, criterion, epoch):
 def get_minus_cross_entropy(x, data_loader, model, criterion, training=False):
   if type(x).__module__ == np.__name__:
     x = torch.from_numpy(x).float()
-    #x = x.cuda()
+    x = x.cuda()
   # switch to evaluate mode
   model.eval()
 
@@ -308,7 +308,7 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
 
   # recover the model
   x0 = torch.from_numpy(x0).float()
-  #x0 = x0.cuda()
+  x0 = x0.cuda()
   x_start = 0
   for p in model.parameters():
       psize = p.data.size()
@@ -330,7 +330,7 @@ sharpnesses1eNeg3 = []
 sharpnesses5eNeg4 = []
 #data_for_plotting = np.load("ShallowNetCIFAR10-intermediate-values.npy")
 print(data_for_plotting)
-i = 0
+i = 4
 # Fill in test accuracy values
 #for `grid_size' points in the interpolation
 for batch_size in batch_range:
@@ -371,7 +371,7 @@ criterion = getattr(model, 'criterion', nn.CrossEntropyLoss)()
 criterion.type(torch.cuda.FloatTensor) #criterion.type(torch.cuda.FloatTensor)
 #model.type(torch.cuda.FloatTensor)
 
-i = 0
+i = 4
 for batch_size in batch_range:
     mydict = {}
     batchmodel = torch.load("./models/ShallowNetCIFAR10BatchSize" + str(batch_size) + ".pth")
