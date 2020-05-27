@@ -157,14 +157,14 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
         # measure data loading time
         data_time.update(time.time() - end)
         if 1 is not None:
-            target = target.cuda(device=device) #comment out if running on CPU
-        input_var = Variable(inputs.type(torch.cuda.FloatTensor))
+            var=1#target = target.cuda(device=device) #comment out if running on CPU
+        input_var = Variable(inputs.type(torch.FloatTensor)) #Variable(inputs.type(torch.cuda.FloatTensor))
         target_var = Variable(target)
 
         # compute output
         if not training:
             output = model(input_var)
-            loss = criterion(output, target_var.cpu())
+            loss = criterion(output, target_var.cpu()) #loss = criterion(output, target_var)
 
             # measure accuracy and record loss
             prec1, prec5 = accuracy(output.data, target_var.data, topk=(1, 5))
@@ -230,7 +230,7 @@ def validate(data_loader, model, criterion, epoch):
 def get_minus_cross_entropy(x, data_loader, model, criterion, training=False):
   if type(x).__module__ == np.__name__:
     x = torch.from_numpy(x).float()
-    x = x.cuda()
+    #x = x.cuda()
   # switch to evaluate mode
   model.eval()
 
@@ -308,7 +308,7 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
 
   # recover the model
   x0 = torch.from_numpy(x0).float()
-  x0 = x0.cuda()
+  #x0 = x0.cuda()
   x_start = 0
   for p in model.parameters():
       psize = p.data.size()
@@ -378,14 +378,14 @@ for batch_size in batch_range:
     for key, value in batchmodel.items():
         mydict[key] = value
     model.load_state_dict(mydict)
-    model.to(device)
+    #model.to(device)
     val_data = get_dataset("cifar10", 'val', transform['eval'])
 
     val_loader = torch.utils.data.DataLoader(
         val_data,
         batch_size=batch_size, shuffle=False,
         num_workers=8, pin_memory=True) #batch
-    model.to(device)
+    #model.to(device)
     val_result = validate(val_loader, model, criterion, 0)
     val_loss, val_prec1, val_prec5 = [val_result[r]
                                       for r in ['loss', 'prec1', 'prec5']]
