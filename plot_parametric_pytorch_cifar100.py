@@ -1,28 +1,36 @@
 """
-I used code from the Nitish Shirish Keskar and Wei Wen.
+I used code from Nitish Shirish Keskar and Wei Wen.
 
-Reproduces the parametric plot experiment from the paper
-for a network like C3.
+@article{Keskar2016,
+	author = {Nitish Shirish Keskar, Dheevatsa Mudigere, Jorge Nocedal, Mikhail Smelyanskiy and Ping Tak Peter Tang},
+	title = {On Large-Batch Training for Deep Learning: Generalization Gap and Sharp Minima},
+	journal = {arXiv preprint arXiv:1609.04836},
+	year = {2016}
+}
 
-Plots a parametric plot between SB and LB
-minimizers demonstrating the relative sharpness
-of the two minima.
+@article{Wen2018,
+	author = {Wei Wen, Yandan Wang, Feng Yan, Cong Xu, Chunpeng Wu, Yiran Chen and Hai Li},
+	title = {SmoothOut: Smoothing Out Sharp Minima to Improve Generalization in Deep Learning},
+	journal = {arXiv preprint arXiv:1805.07898},
+	year = {2018}
+}
 
-Requirements:
-- Keras (only for CIFAR-10 dataset; easy to avoid)
+Code that reproduces the parametric plot experiment from the paper by Keskar. C3. 
+
+Plots a parametric plot between SB and LB minimizers demonstrating the relative sharpness of the two minima; measures testing accuracy and sharpness across different batch sizes.
+
+Requirements/Dependencies:
+- Keras (only for CIFAR-100 dataset; easy to avoid)
+- PyTorch
+- Torchvision
 - Matplotlib
 - Numpy
-
-TODO:
-- Enable the code to run on CUDA as well.
-  (As of now, it only runs on CPU)
+- Bokeh
 
 Run Command:
-        python plot_parametric_pytorch.py
+        python plot_parametric_pytorch_cifar100.py
 
-The plot is saved as C3ish.pdf
 """
-
 import pdb
 import argparse
 import os
@@ -58,7 +66,8 @@ import torch.nn.functional as F
 import keras #This dependency is only for loading the CIFAR-10 data set
 from keras.datasets import cifar10, cifar100
 from copy import deepcopy
-import vgg100
+import vgg
+import cifar_shallow
 
 cudnn.benchmark = True
 (X_train, y_train), (X_test, y_test) = cifar100.load_data()
@@ -71,7 +80,7 @@ X_test /= 255
 device = torch.device('cuda:0')
 
 #Load the model of any choice
-model = vgg100.vgg11_bn()
+model = cifar_shallow.cifar100_shallow()
 #model.to(device)
 
 
@@ -90,11 +99,11 @@ x0 = deepcopy(model.state_dict())
 # Number of epochs to train for
 # Choose a large value since LB training needs higher values
 # Changed from 150 to 30
-nb_epochs = 30 #[25, 40, 50, 64, 80, 128, ]
-batch_range = [256, 512, 625, 1024, 1250, 1750, 2048, 2500, 3125, 4096, 4500, 5000]
+nb_epochs = 30
+batch_range = [25, 40, 50, 64, 80, 128, 256, 512, 625, 1024, 1250, 1750, 2048, 2500, 3125, 4096, 4500, 5000]
 
 # parametric plot (i.e., don't train the network)
-hotstart = True
+hotstart = False
 
 if not hotstart:
     for batch_size in batch_range:
@@ -109,7 +118,7 @@ if not hotstart:
             print('Epoch:', e, ' of ', nb_epochs, 'Average loss:', average_loss_over_epoch)
             average_loss_over_epoch = 0
             # Checkpoint the model every epoch
-            torch.save(model.state_dict(), "./models/30EpochCIFAR100ExperimentBatchSize" + str(batch_size) + ".pth")
+            torch.save(model.state_dict(), "./models/ShallowNetCIFAR100BatchSize" + str(batch_size) + ".pth")
             array = np.random.permutation(range(X_train.shape[0]))
             slices = X_train.shape[0] // batch_size
             beginning = 0
@@ -158,7 +167,7 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
         data_time.update(time.time() - end)
         if 1 is not None:
             target = target.cuda(device=device) #comment out if running on CPU
-        input_var = Variable(inputs.type(torch.FloatTensor))
+        input_var = Variable(inputs.type(torch.cuda.FloatTensor))
         target_var = Variable(target)
 
         # compute output
@@ -328,14 +337,13 @@ grid_size = 18 #How many points of interpolation between [0, 5000]
 data_for_plotting = np.zeros((grid_size, 3)) #3 lines on the graph
 sharpnesses1eNeg3 = []
 sharpnesses5eNeg4 = []
-#data_for_plotting = np.load("30EpochC3Experiment-intermediate-values.npy")
-#data_for_plotting = np.load("30EpochCIFAR100Experiment-intermediate-values.npy")
-i = 6
+#data_for_plotting = np.load("ShallowNetCIFAR100-intermediate-values.npy")
+i = 0
 # # Fill in test accuracy values
 # #for `grid_size' points in the interpolation
 for batch_size in batch_range:
     mydict = {}
-    batchmodel = torch.load("./models/30EpochCIFAR100ExperimentBatchSize" + str(batch_size) + ".pth")
+    batchmodel = torch.load("./models/ShallowNetCIFAR100BatchSize" + str(batch_size) + ".pth")
     for key, value in batchmodel.items():
         mydict[key] = value
     model.load_state_dict(mydict)
@@ -352,7 +360,7 @@ for batch_size in batch_range:
                 data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
         j += 1
     print(data_for_plotting[i])
-    np.save('30EpochCIFAR100Experiment-intermediate-values', data_for_plotting)
+    np.save('ShallowNetCIFAR100-intermediate-values', data_for_plotting)
     i += 1
 
 
@@ -374,7 +382,7 @@ for batch_size in batch_range:
 i = 6
 for batch_size in batch_range:
     mydict = {}
-    batchmodel = torch.load("./models/30EpochCIFAR100ExperimentBatchSize" + str(batch_size) + ".pth")
+    batchmodel = torch.load("./models/ShallowNetCIFAR100BatchSize" + str(batch_size) + ".pth")
     for key, value in batchmodel.items():
         mydict[key] = value
     model.load_state_dict(mydict)
@@ -394,13 +402,13 @@ for batch_size in batch_range:
     sharpnesses1eNeg3.append(sharpness)
     data_for_plotting[i, 1] += sharpness
     print(sharpness)
-    np.save('30EpochCIFAR100Experiment-intermediate-values', data_for_plotting)
+    np.save('ShallowNetCIFAR100-intermediate-values', data_for_plotting)
     sharpness = get_sharpness(val_loader, model, criterion, 0.0005, manifolds=0)
     sharpnesses5eNeg4.append(sharpness)
     data_for_plotting[i, 2] += sharpness
     print(sharpness)
     i += 1
-    np.save('30EpochCIFAR100Experiment-intermediate-values', data_for_plotting)
+    np.save('ShallowNetCIFAR100-intermediate-values', data_for_plotting)
 
 # Actual plotting;
 # if matplotlib is not available, use any tool of your choice by
@@ -419,5 +427,5 @@ ax2.set_ylabel('Sharpness', color='r')
 ax2.legend(('1e-3', '5e-4'), loc=0)
 
 ax1.grid(b=True, which='both')
-plt.savefig('BatchSizeVSTestAccuracySharpnessPlot.pdf')
+plt.savefig('C3BatchSizeVSTestAccuracySharpnessPlot.pdf')
 print('Saved figure; Task complete')
