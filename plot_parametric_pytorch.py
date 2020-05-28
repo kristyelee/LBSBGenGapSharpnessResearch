@@ -335,8 +335,6 @@ i = 0
 #for `grid_size' points in the interpolation
 for batch_size in batch_range:
     mydict = {}
-    if i == 4:
-      break
     batchmodel = torch.load("./models/ShallowNetCIFAR10BatchSize" + str(batch_size) + ".pth")
     for key, value in batchmodel.items():
         mydict[key] = value
@@ -376,8 +374,6 @@ criterion.type(torch.cuda.FloatTensor) #criterion.type(torch.cuda.FloatTensor)
 i = 0
 for batch_size in batch_range:
     mydict = {}
-    if i == 4:
-      break
     batchmodel = torch.load("./models/ShallowNetCIFAR10BatchSize" + str(batch_size) + ".pth")
     for key, value in batchmodel.items():
         mydict[key] = value
