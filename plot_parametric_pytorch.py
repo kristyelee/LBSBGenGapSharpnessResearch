@@ -94,8 +94,8 @@ x0 = deepcopy(model.state_dict())
 nb_epochs = 30 
 batch_range = [25, 40, 50, 64, 80, 128, 256, 512, 625, 1024, 1250, 1750, 2048, 2500, 3125, 4096, 4500, 5000]
 
-# parametric plot (i.e., don't train the network)
-hotstart = True
+# parametric plot (i.e., don't train the network if set to True)
+hotstart = False
 
 if not hotstart:
     for batch_size in batch_range:
@@ -109,6 +109,7 @@ if not hotstart:
             model.eval()
             print('Epoch:', e, ' of ', nb_epochs, 'Average loss:', average_loss_over_epoch)
             average_loss_over_epoch = 0
+
             # Checkpoint the model every epoch
             torch.save(model.state_dict(), "./models/ShallowNetCIFAR10BatchSize" + str(batch_size) + ".pth")
             array = np.random.permutation(range(X_train.shape[0]))
@@ -158,13 +159,13 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
         data_time.update(time.time() - end)
         if 1 is not None:
             target = target.cuda(device=device) #comment out if running on CPU
-        input_var = Variable(inputs.type(torch.cuda.FloatTensor)) #Variable(inputs.type(torch.cuda.FloatTensor))
+        input_var = Variable(inputs.type(torch.cuda.FloatTensor)) 
         target_var = Variable(target)
 
         # compute output
         if not training:
             output = model(input_var)
-            loss = criterion(output, target_var) #loss = criterion(output, target_var)
+            loss = criterion(output, target_var)
 
             # measure accuracy and record loss
             prec1, prec5 = accuracy(output.data, target_var.data, topk=(1, 5))
@@ -331,8 +332,8 @@ sharpnesses5eNeg4 = []
 data_for_plotting = np.load("ShallowNetCIFAR10-intermediate-values.npy") #Uncomment this line to use an existing NumPy array
 print(data_for_plotting)
 i = 0
-# Fill in test accuracy values
-#for `grid_size' points in the interpolation
+
+# Fill in test accuracy values for `grid_size' points in the interpolation
 for batch_size in batch_range:
     mydict = {}
     batchmodel = torch.load("./models/ShallowNetCIFAR10BatchSize" + str(batch_size) + ".pth")
