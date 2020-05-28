@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+F = nn.functional
 __all__ = ['cifar10_shallow', 'cifar100_shallow']
 
 
