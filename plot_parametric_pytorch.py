@@ -1,20 +1,31 @@
 """
 I used code from Nitish Shirish Keskar and Wei Wen.
 
-Reproduces the parametric plot experiment from the paper
-for C1. 
+@article{Keskar2016,
+	author = {Nitish Shirish Keskar, Dheevatsa Mudigere, Jorge Nocedal, Mikhail Smelyanskiy and Ping Tak Peter Tang},
+	title = {On Large-Batch Training for Deep Learning: Generalization Gap and Sharp Minima},
+	journal = {arXiv preprint arXiv:1609.04836},
+	year = {2016}
+}
 
-Plots a parametric plot between SB and LB
-minimizers demonstrating the relative sharpness
-of the two minima; measures testing accuracy and sharpness across different batch sizes.
+@article{Wen2018,
+	author = {Wei Wen, Yandan Wang, Feng Yan, Cong Xu, Chunpeng Wu, Yiran Chen and Hai Li},
+	title = {SmoothOut: Smoothing Out Sharp Minima to Improve Generalization in Deep Learning},
+	journal = {arXiv preprint arXiv:1805.07898},
+	year = {2018}
+}
+
+Code that reproduces the parametric plot experiment from the paper by Keskar. Figure 4, C1. 
+
+Plots a parametric plot between SB and LB minimizers demonstrating the relative sharpness of the two minima; measures testing accuracy and sharpness across different batch sizes.
 
 Requirements/Dependencies:
 - Keras (only for CIFAR-10 dataset; easy to avoid)
+- PyTorch
+- Torchvision
 - Matplotlib
 - Numpy
 - Bokeh
-- PyTorch
-
 
 Run Command:
         python plot_parametric_pytorch.py
@@ -394,12 +405,12 @@ for batch_size in batch_range:
     sharpness = get_sharpness(val_loader, model, criterion, 0.001, manifolds=0)
     sharpnesses1eNeg3.append(sharpness)
     data_for_plotting[i, 1] += sharpness
-    print(sharpness)
+    print(data_for_plotting[i])
     np.save('ShallowNetCIFAR10-intermediate-values', data_for_plotting)
     sharpness = get_sharpness(val_loader, model, criterion, 0.0005, manifolds=0)
     sharpnesses5eNeg4.append(sharpness)
     data_for_plotting[i, 2] += sharpness
-    print(sharpness)
+    print(data_for_plotting[i])
     i += 1
     np.save('ShallowNetCIFAR10-intermediate-values', data_for_plotting)
 
@@ -420,5 +431,5 @@ ax2.set_ylabel('Sharpness', color='r')
 ax2.legend(('1e-3', '5e-4'), loc=0)
 
 ax1.grid(b=True, which='both')
-plt.savefig('CIFAR10BatchSizeVSTestAccuracySharpnessPlot.pdf')
+plt.savefig('C1BatchSizeVSTestAccuracySharpnessPlot.pdf')
 print('Saved figure; Task complete')
