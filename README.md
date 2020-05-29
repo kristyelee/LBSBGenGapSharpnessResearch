@@ -1,6 +1,7 @@
 # LBSBGenGapSharpnessResearch
+====================
 
-# Dependencies 
+## Dependencies 
 - Keras
 - Numpy
 - Matplotlib
