@@ -99,7 +99,7 @@ x0 = deepcopy(model.state_dict())
 # Number of epochs to train for
 # Choose a large value since LB training needs higher values
 # Changed from 150 to 30
-nb_epochs = 30
+nb_epochs = 60
 batch_range = [25, 40, 50, 64, 80, 128, 256, 512, 625, 1024, 1250, 1750, 2048, 2500, 3125, 4096, 4500, 5000]
 
 # parametric plot (i.e., don't train the network)
@@ -107,7 +107,7 @@ hotstart = False
 
 if not hotstart:
     for batch_size in batch_range:
-        optimizer = torch.optim.Adam(model.parameters())
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.05)
         model.load_state_dict(x0)
         #model.to(device)
         average_loss_over_epoch = '-'
@@ -334,7 +334,7 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
 
 
 grid_size = 18 #How many points of interpolation between [0, 5000]
-data_for_plotting = np.zeros((grid_size, 3)) #3 lines on the graph
+data_for_plotting = np.zeros((grid_size, 4)) #3 lines on the graph
 sharpnesses1eNeg3 = []
 sharpnesses5eNeg4 = []
 #data_for_plotting = np.load("ShallowNetCIFAR100-intermediate-values.npy")
@@ -356,11 +356,10 @@ for batch_size in batch_range:
             ops = opfun(dataX[smpl])
             tgts = Variable(torch.from_numpy(datay[smpl]).long().squeeze())
             var = F.nll_loss(ops, tgts).data.numpy() / 10
-            if j == 1:
-                data_for_plotting[i, j-1] += accfun(ops, datay[smpl]) / 10.
+            data_for_plotting[i, j] += accfun(ops, datay[smpl]) / 10.
         j += 1
     print(data_for_plotting[i])
-    np.save('ShallowNetCIFAR100-intermediate-values', data_for_plotting)
+    np.save('ShallowNetC3CIFAR100-intermediate-values', data_for_plotting)
     i += 1
 
 
@@ -379,7 +378,7 @@ for batch_size in batch_range:
 # criterion.type(torch.FloatTensor)
 # #model.type(torch.cuda.FloatTensor)
 
-i = 6
+i = 0
 for batch_size in batch_range:
     mydict = {}
     batchmodel = torch.load("./models/ShallowNetCIFAR100BatchSize" + str(batch_size) + ".pth")
@@ -400,15 +399,15 @@ for batch_size in batch_range:
 
     sharpness = get_sharpness(val_loader, model, criterion, 0.001, manifolds=0)
     sharpnesses1eNeg3.append(sharpness)
-    data_for_plotting[i, 1] += sharpness
-    print(sharpness)
-    np.save('ShallowNetCIFAR100-intermediate-values', data_for_plotting)
-    sharpness = get_sharpness(val_loader, model, criterion, 0.0005, manifolds=0)
-    sharpnesses5eNeg4.append(sharpness)
     data_for_plotting[i, 2] += sharpness
     print(sharpness)
+    np.save('ShallowNetC3CIFAR100-intermediate-values', data_for_plotting)
+    sharpness = get_sharpness(val_loader, model, criterion, 0.0005, manifolds=0)
+    sharpnesses5eNeg4.append(sharpness)
+    data_for_plotting[i, 3] += sharpness
+    print(sharpness)
     i += 1
-    np.save('ShallowNetCIFAR100-intermediate-values', data_for_plotting)
+    np.save('ShallowNetC3CIFAR100-intermediate-values', data_for_plotting)
 
 # Actual plotting;
 # if matplotlib is not available, use any tool of your choice by
@@ -417,12 +416,14 @@ import matplotlib.pyplot as plt
 fig, ax1 = plt.subplots()
 ax2 = ax1.twinx()
 ax1.plot(batch_range, data_for_plotting[:, 0], 'b-')
+ax1.plot(batch_range, data_for_plotting[:, 1], 'b--')
 
-ax2.plot(batch_range, data_for_plotting[:, 1], 'r-')
-ax2.plot(batch_range, data_for_plotting[:, 2], 'r--')
+ax2.plot(batch_range, data_for_plotting[:, 2], 'r-')
+ax2.plot(batch_range, data_for_plotting[:, 3], 'r--')
 
 ax1.set_xlabel('Batch Size')
 ax1.set_ylabel('Testing Accuracy', color='b')
+ax1.legend(('Train', 'Test'), loc=0)
 ax2.set_ylabel('Sharpness', color='r')
 ax2.legend(('1e-3', '5e-4'), loc=0)
 
