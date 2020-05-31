@@ -99,7 +99,7 @@ x0 = deepcopy(model.state_dict())
 # Number of epochs to train for
 # Choose a large value since LB training needs higher values
 # Changed from 150 to 30
-nb_epochs = 60
+nb_epochs = 100
 batch_range = [25, 40, 50, 64, 80, 128, 256, 512, 625, 1024, 1250, 1750, 2048, 2500, 3125, 4096, 4500, 5000]
 
 # parametric plot (i.e., don't train the network)
@@ -334,10 +334,10 @@ def get_sharpness(data_loader, model, criterion, epsilon, manifolds=0):
 
 
 grid_size = 18 #How many points of interpolation between [0, 5000]
-data_for_plotting = np.zeros((grid_size, 4)) #3 lines on the graph
+data_for_plotting = np.zeros((grid_size, 4)) #4 lines on the graph
 sharpnesses1eNeg3 = []
 sharpnesses5eNeg4 = []
-#data_for_plotting = np.load("ShallowNetCIFAR100-intermediate-values.npy")
+#data_for_plotting = np.load("ShallowNetC3-intermediate-values.npy")
 i = 0
 # # Fill in test accuracy values
 # #for `grid_size' points in the interpolation
@@ -359,23 +359,23 @@ for batch_size in batch_range:
             data_for_plotting[i, j] += accfun(ops, datay[smpl]) / 10.
         j += 1
     print(data_for_plotting[i])
-    np.save('ShallowNetC3CIFAR100-intermediate-values', data_for_plotting)
+    np.save('ShallowNetC3-intermediate-values', data_for_plotting)
     i += 1
 
 
 
 # # Data loading code
-# default_transform = {
-#     'train': get_transform("cifar10",
-#                            input_size=None, augment=True),
-#     'eval': get_transform("cifar10",
-#                           input_size=None, augment=False)
-# }
-# transform = getattr(model, 'input_transform', default_transform)
+default_transform = {
+    'train': get_transform("cifar10",
+                           input_size=None, augment=True),
+    'eval': get_transform("cifar10",
+                          input_size=None, augment=False)
+}
+transform = getattr(model, 'input_transform', default_transform)
 
-# # define loss function (criterion) and optimizer
-# criterion = getattr(model, 'criterion', nn.CrossEntropyLoss)()
-# criterion.type(torch.FloatTensor)
+# define loss function (criterion) and optimizer
+criterion = getattr(model, 'criterion', nn.CrossEntropyLoss)()
+criterion.type(torch.FloatTensor)
 # #model.type(torch.cuda.FloatTensor)
 
 i = 0
@@ -401,13 +401,13 @@ for batch_size in batch_range:
     sharpnesses1eNeg3.append(sharpness)
     data_for_plotting[i, 2] += sharpness
     print(sharpness)
-    np.save('ShallowNetC3CIFAR100-intermediate-values', data_for_plotting)
+    np.save('ShallowNetC3-intermediate-values', data_for_plotting)
     sharpness = get_sharpness(val_loader, model, criterion, 0.0005, manifolds=0)
     sharpnesses5eNeg4.append(sharpness)
     data_for_plotting[i, 3] += sharpness
     print(sharpness)
     i += 1
-    np.save('ShallowNetC3CIFAR100-intermediate-values', data_for_plotting)
+    np.save('ShallowNetC3-intermediate-values', data_for_plotting)
 
 # Actual plotting;
 # if matplotlib is not available, use any tool of your choice by
