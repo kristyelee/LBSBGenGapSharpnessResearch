@@ -78,3 +78,12 @@ class VGG(nn.module):
         x = x.view(-1, 64 * 7 * 7)
         x = self.classifier(x)
         return F.log_softmax(x)
+
+def cifar10_deep(**kwargs):
+    num_classes = getattr(kwargs, 'num_classes', 10)
+    return VGG(num_classes)
+
+
+def cifar100_deep(**kwargs):
+    num_classes = getattr(kwargs, 'num_classes', 100)
+    return VGG(num_classes)
