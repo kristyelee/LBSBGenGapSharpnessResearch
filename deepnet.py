@@ -75,7 +75,7 @@ class VGG(nn.Module):
 
     def forward(self, x):
         x = self.features(x)
-        x = x.view(-1, 64 * 7 * 7)
+        x = x.view(-1, 512)
         x = self.classifier(x)
         return F.log_softmax(x)
 
