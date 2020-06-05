@@ -3,7 +3,7 @@ import torch.nn as nn
 F = nn.functional
 __all__ = ['cifar10_deepnet', 'cifar100_deepnet']
 
-class VGG(nn.module):
+class VGG(nn.Module):
     def __init__(self, num_classes=10):
         super(VGG, self).__init__()
         self.features = nn.Sequential(
