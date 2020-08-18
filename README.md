@@ -11,9 +11,9 @@ Kristy Lee, Spring 2020. Research under Berkeley postdoc Xiaowu Dai. (Simons Ins
 plot_parametric_pytorch.py, plot_parametric_pytorch_cifar100.py, cifar_shallow.py, deepnet.py, vgg.py
 
 ```
-python3 plot_parametric_pytorch.py
+python plot_parametric_pytorch.py
 ```
 
 ```
-python3 plot_parametric_pytorch_cifar100.py
+python plot_parametric_pytorch_cifar100.py
 ```
