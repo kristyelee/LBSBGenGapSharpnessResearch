@@ -1,5 +1,5 @@
 # LBSBGenGapSharpnessResearch
-Kristy Lee, Spring 2020. Research under Berkeley Statistics PhD Student Xiaowu Dai.
+Kristy Lee, Spring 2020. Research under Berkeley postdoc Xiaowu Dai. (Simons Institute for the Theory of Computing)
 ## Dependencies 
 - Keras
 - Numpy
